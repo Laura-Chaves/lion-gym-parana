@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lion Gym Paraná</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f0f0f;
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+
+    .logo-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 3rem;
+    }
+
+    .logo-area img {
+      width: 130px;
+      height: 130px;
+      object-fit: contain;
+      margin-bottom: 1rem;
+      filter: drop-shadow(0 0 22px #cc0000aa);
+    }
+
+    .logo-texto {
+      font-size: 2.5rem;
+      font-weight: 900;
+      color: #cc0000;
+      letter-spacing: 4px;
+    }
+
+    .subtitulo {
+      color: #666;
+      font-size: 0.95rem;
+      margin-top: 0.3rem;
+      letter-spacing: 1px;
+    }
+
+    .menu {
+      width: 100%;
+      max-width: 420px;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .menu a {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: #1a1a1a;
+      border: 2px solid #2a2a2a;
+      border-left: 4px solid #cc0000;
+      border-radius: 14px;
+      padding: 1.2rem 1.5rem;
+      text-decoration: none;
+      color: white;
+      transition: border-color 0.2s, transform 0.15s, background 0.2s;
+    }
+
+    .menu a:hover {
+      border-color: #cc0000;
+      background: #1f1f1f;
+      transform: translateY(-2px);
+    }
+
+    .menu .texto .titulo {
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+
+    .menu .texto .desc {
+      font-size: 0.8rem;
+      color: #888;
+      margin-top: 0.15rem;
+    }
+
+    .separador {
+      color: #555;
+      font-size: 0.75rem;
+      text-align: center;
+      margin: 0.8rem 0 0.2rem;
+      letter-spacing: 1px;
+    }
+
+    .footer {
+      margin-top: 3rem;
+      color: #444;
+      font-size: 0.8rem;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="logo-area">
+    <img src="leon.webp" alt="Lion Gym">
+    <div class="logo-texto">LION GYM</div>
+    <div class="subtitulo">PARANÁ — SISTEMA DE GESTIÓN</div>
+  </div>
+
+  <div class="menu">
+    <a href="recepcion.html">
+      <div class="texto">
+        <div class="titulo">Recepción</div>
+        <div class="desc">Registro de ingreso por DNI — acceso libre</div>
+      </div>
+    </a>
+
+    <div class="separador">— ÁREA ADMINISTRATIVA —</div>
+
+    <a href="login.html">
+      <div class="texto">
+        <div class="titulo">Iniciar sesión</div>
+        <div class="desc">Acceso para administradores</div>
+      </div>
+    </a>
+
+    <a href="alta-socio.html">
+      <div class="texto">
+        <div class="titulo">Alta de socio</div>
+        <div class="desc">Cargar nuevo socio y asignar plan</div>
+      </div>
+    </a>
+
+    <a href="editar-socio.html">
+      <div class="texto">
+        <div class="titulo">Editar socio</div>
+        <div class="desc">Modificar datos o cambiar de plan</div>
+      </div>
+    </a>
+
+    <a href="registro-pagos.html">
+      <div class="texto">
+        <div class="titulo">Registrar pago</div>
+        <div class="desc">Buscar socio y registrar cuota</div>
+      </div>
+    </a>
+  </div>
+
+  <div class="footer">Lion Gym Paraná © 2026</div>
+
+</body>
+</html>
