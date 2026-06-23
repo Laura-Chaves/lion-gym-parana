@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lion Gym Paraná — Registro de Pagos</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f0f0f;
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2.5rem 1rem 4rem;
+    }
+
+    .logo-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+
+    .logo-area img {
+      width: 90px;
+      height: 90px;
+      object-fit: contain;
+      margin-bottom: 0.6rem;
+      filter: drop-shadow(0 0 18px #cc0000aa);
+    }
+
+    .logo-texto {
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: #cc0000;
+      letter-spacing: 3px;
+    }
+
+    .subtitulo {
+      color: #666;
+      font-size: 0.85rem;
+      margin-top: 0.2rem;
+      letter-spacing: 1px;
+    }
+
+    .nav-links {
+      margin-top: 1rem;
+      display: flex;
+      gap: 1.5rem;
+    }
+
+    .nav-links a {
+      color: #888;
+      text-decoration: none;
+      font-size: 0.9rem;
+      border-bottom: 1px solid transparent;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    .nav-links a:hover {
+      color: #cc0000;
+      border-color: #cc0000;
+    }
+
+    .contenedor {
+      width: 100%;
+      max-width: 480px;
+    }
+
+    .tarjeta {
+      background: #1a1a1a;
+      border: 2px solid #2a2a2a;
+      border-radius: 16px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .tarjeta h2 {
+      font-size: 1.1rem;
+      color: #cc0000;
+      margin-bottom: 1.2rem;
+      letter-spacing: 0.5px;
+    }
+
+    .campo {
+      margin-bottom: 1.1rem;
+    }
+
+    .campo label {
+      display: block;
+      font-size: 0.85rem;
+      color: #aaa;
+      margin-bottom: 0.4rem;
+    }
+
+    .campo input,
+    .campo select {
+      width: 100%;
+      padding: 0.85rem;
+      font-size: 1.05rem;
+      border: 2px solid #333;
+      border-radius: 8px;
+      background: #111;
+      color: white;
+      outline: none;
+      transition: border-color 0.2s;
+      font-family: inherit;
+    }
+
+    .campo input:focus,
+    .campo select:focus {
+      border-color: #cc0000;
+    }
+
+    .fila-doble {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .btn-buscar, .btn-guardar {
+      width: 100%;
+      padding: 1rem;
+      font-size: 1.05rem;
+      font-weight: 700;
+      background: #cc0000;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-buscar:hover, .btn-guardar:hover { background: #aa0000; }
+    .btn-guardar:disabled {
+      background: #555;
+      cursor: not-allowed;
+    }
+
+    .mensaje {
+      margin-top: 1rem;
+      padding: 0.9rem 1rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      display: none;
+      line-height: 1.5;
+    }
+
+    .mensaje.exito {
+      background: #0d2e1a;
+      border: 1px solid #1a7a3a;
+      color: #4cdf7a;
+    }
+
+    .mensaje.error {
+      background: #2e0d0d;
+      border: 1px solid #7a1a1a;
+      color: #df4c4c;
+    }
+
+    .tarjeta-socio {
+      display: none;
+    }
+
+    .info-socio {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1.2rem;
+      padding-bottom: 1.2rem;
+      border-bottom: 1px solid #2a2a2a;
+    }
+
+    .info-socio .nombre {
+      font-size: 1.3rem;
+      font-weight: 700;
+    }
+
+    .info-socio .plan {
+      font-size: 0.85rem;
+      color: #888;
+      margin-top: 0.3rem;
+    }
+
+    .badge-estado {
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 0.3rem 0.7rem;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+
+    .badge-pagado {
+      background: #0d2e1a;
+      color: #4cdf7a;
+      border: 1px solid #1a7a3a;
+    }
+
+    .badge-pendiente {
+      background: #2e0d0d;
+      color: #df4c4c;
+      border: 1px solid #7a1a1a;
+    }
+
+    .nota-recargo {
+      background: rgba(204,0,0,0.1);
+      border: 1px solid #cc0000;
+      border-radius: 8px;
+      padding: 0.7rem 1rem;
+      font-size: 0.85rem;
+      color: #ff6b6b;
+      margin-bottom: 1.1rem;
+    }
+
+    .historial {
+      background: #1a1a1a;
+      border: 2px solid #2a2a2a;
+      border-radius: 16px;
+      padding: 1.5rem;
+      display: none;
+    }
+
+    .historial h2 {
+      font-size: 1rem;
+      color: #ccc;
+      margin-bottom: 1rem;
+    }
+
+    .pago-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.7rem 0;
+      border-bottom: 1px solid #2a2a2a;
+      font-size: 0.88rem;
+    }
+
+    .pago-item:last-child { border-bottom: none; }
+
+    .pago-item .periodo { font-weight: 600; }
+    .pago-item .detalle { color: #888; font-size: 0.8rem; }
+    .pago-item .monto { color: #4cdf7a; font-weight: 700; }
+
+    .vacio {
+      color: #666;
+      font-size: 0.85rem;
+      text-align: center;
+      padding: 1rem 0;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="logo-area">
+    <img src="leon.webp" alt="Lion Gym">
+    <div class="logo-texto">LION GYM</div>
+    <div class="subtitulo">PARANÁ — REGISTRO DE PAGOS</div>
+    <div class="nav-links">
+      <a href="alta-socio.html">+ Alta de socio</a>
+      <a href="recepcion.html">Recepción</a>
+      <a href="#" onclick="cerrarSesion(); return false;">Cerrar sesión</a>
+    </div>
+  </div>
+
+  <div class="contenedor">
+
+    <div class="tarjeta">
+      <h2>BUSCAR SOCIO</h2>
+      <div class="campo">
+        <label>DNI</label>
+        <input type="number" id="inputDNI" placeholder="12345678" autofocus
+          onkeydown="if(event.key==='Enter') buscarSocio()">
+      </div>
+      <button class="btn-buscar" onclick="buscarSocio()">BUSCAR</button>
+      <div class="mensaje" id="mensajeBusqueda"></div>
+    </div>
+
+    <div class="tarjeta tarjeta-socio" id="tarjetaSocio">
+      <div class="info-socio">
+        <div>
+          <div class="nombre" id="nombreSocio"></div>
+          <div class="plan" id="planSocio"></div>
+        </div>
+        <div class="badge-estado" id="badgeEstado"></div>
+      </div>
+
+      <div id="notaRecargo"></div>
+
+      <form id="formPago">
+        <div class="fila-doble">
+          <div class="campo">
+            <label>Año</label>
+            <input type="number" id="anioPago" required>
+          </div>
+          <div class="campo">
+            <label>Mes</label>
+            <select id="mesPago" required>
+              <option value="1">Enero</option>
+              <option value="2">Febrero</option>
+              <option value="3">Marzo</option>
+              <option value="4">Abril</option>
+              <option value="5">Mayo</option>
+              <option value="6">Junio</option>
+              <option value="7">Julio</option>
+              <option value="8">Agosto</option>
+              <option value="9">Septiembre</option>
+              <option value="10">Octubre</option>
+              <option value="11">Noviembre</option>
+              <option value="12">Diciembre</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="campo">
+          <label>Monto a cobrar</label>
+          <input type="number" id="montoPago" step="0.01" required>
+        </div>
+
+        <div class="campo">
+          <label>Método de pago</label>
+          <select id="metodoPago">
+            <option value="efectivo">Efectivo</option>
+            <option value="transferencia">Transferencia</option>
+            <option value="mercadopago">Mercado Pago</option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn-guardar" id="btnGuardarPago">REGISTRAR PAGO</button>
+        <div class="mensaje" id="mensajePago"></div>
+      </form>
+    </div>
+
+    <div class="historial" id="historial">
+      <h2>Historial de pagos</h2>
+      <div id="listaPagos"></div>
+    </div>
+
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://hlhsrbstxxdanyckujem.supabase.co'
+    const SUPABASE_KEY = 'sb_publishable_NOA6FfVrGTtkX0eu_rvyZA_Uyye2XRl'
+    const { createClient } = supabase
+    const db = createClient(SUPABASE_URL, SUPABASE_KEY)
+
+    // Protección de acceso: solo administradores logueados
+    async function verificarAcceso() {
+      const { data } = await db.auth.getSession()
+      if (!data.session) {
+        window.location.href = 'login.html'
+        return
+      }
+      const { data: admin } = await db
+        .from('administradores')
+        .select('nombre')
+        .eq('id', data.session.user.id)
+        .eq('activo', true)
+        .limit(1)
+
+      if (!admin || admin.length === 0) {
+        await db.auth.signOut()
+        window.location.href = 'login.html'
+      }
+    }
+    verificarAcceso()
+
+    async function cerrarSesion() {
+      await db.auth.signOut()
+      window.location.href = 'login.html'
+    }
+
+    const nombresMes = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+
+    let socioActual = null
+    let membresiaActual = null
+
+    // Precargar año/mes actuales en el formulario
+    const ahora = new Date()
+    document.getElementById('anioPago').value = ahora.getFullYear()
+    document.getElementById('mesPago').value = ahora.getMonth() + 1
+
+    function mostrarMensaje(elementoId, texto, tipo) {
+      const el = document.getElementById(elementoId)
+      el.className = `mensaje ${tipo}`
+      el.textContent = texto
+      el.style.display = 'block'
+    }
+
+    function ocultarTarjetaSocio() {
+      document.getElementById('tarjetaSocio').style.display = 'none'
+      document.getElementById('historial').style.display = 'none'
+    }
+
+    async function buscarSocio() {
+      const dni = document.getElementById('inputDNI').value.trim()
+      document.getElementById('mensajeBusqueda').style.display = 'none'
+      ocultarTarjetaSocio()
+
+      if (!dni) return
+
+      const { data: socios, error } = await db
+        .from('socios')
+        .select('*')
+        .eq('dni', dni)
+        .limit(1)
+
+      if (error || !socios || socios.length === 0) {
+        mostrarMensaje('mensajeBusqueda', 'No se encontró ningún socio con ese DNI.', 'error')
+        return
+      }
+
+      socioActual = socios[0]
+
+      const { data: membresias } = await db
+        .from('membresias')
+        .select('*, planes(*)')
+        .eq('socio_id', socioActual.id)
+        .eq('estado', 'activa')
+        .limit(1)
+
+      if (!membresias || membresias.length === 0) {
+        mostrarMensaje('mensajeBusqueda', `${socioActual.nombre} no tiene una membresía activa. Asignale una desde "Alta de socio" antes de registrar el pago.`, 'error')
+        return
+      }
+
+      membresiaActual = membresias[0]
+      mostrarTarjetaSocio()
+      await cargarHistorialPagos()
+    }
+
+    async function mostrarTarjetaSocio() {
+      document.getElementById('nombreSocio').textContent = socioActual.nombre
+      document.getElementById('planSocio').textContent = `Plan: ${membresiaActual.planes.nombre} — ${Number(membresiaActual.planes.precio).toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}`
+
+      const anioActual = ahora.getFullYear()
+      const mesActual = ahora.getMonth() + 1
+      const diaActual = ahora.getDate()
+
+      const { data: pagosDelMes } = await db
+        .from('pagos')
+        .select('*')
+        .eq('socio_id', socioActual.id)
+        .eq('anio', anioActual)
+        .eq('mes', mesActual)
+        .limit(1)
+
+      const yaPagoEsteMes = pagosDelMes && pagosDelMes.length > 0
+      const badge = document.getElementById('badgeEstado')
+      const notaRecargo = document.getElementById('notaRecargo')
+
+      if (yaPagoEsteMes) {
+        badge.className = 'badge-estado badge-pagado'
+        badge.textContent = `✅ ${nombresMes[mesActual]} PAGADO`
+        notaRecargo.innerHTML = ''
+      } else {
+        badge.className = 'badge-estado badge-pendiente'
+        badge.textContent = `⚠️ ${nombresMes[mesActual]} PENDIENTE`
+
+        const diaVencimiento = membresiaActual.planes.dia_vencimiento || 10
+        const recargo = membresiaActual.planes.porcentaje_recargo || 15
+        const precio = Number(membresiaActual.planes.precio)
+        const conRecargo = diaActual > diaVencimiento
+        const montoSugerido = conRecargo ? precio * (1 + recargo / 100) : precio
+
+        if (conRecargo) {
+          notaRecargo.innerHTML = `<div class="nota-recargo">💸 Estamos después del día ${diaVencimiento}: corresponde recargo del ${recargo}%. Monto sugerido: ${montoSugerido.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}</div>`
+        } else {
+          notaRecargo.innerHTML = `<div class="nota-recargo" style="background:rgba(76,223,122,0.08); border-color:#1a7a3a; color:#4cdf7a;">💰 Dentro del plazo (hasta el día ${diaVencimiento}). Monto sugerido: ${montoSugerido.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}</div>`
+        }
+
+        document.getElementById('montoPago').value = montoSugerido.toFixed(2)
+      }
+
+      document.getElementById('tarjetaSocio').style.display = 'block'
+    }
+
+    async function cargarHistorialPagos() {
+      const { data: pagos, error } = await db
+        .from('pagos')
+        .select('*')
+        .eq('socio_id', socioActual.id)
+        .order('fecha_pago', { ascending: false })
+        .limit(6)
+
+      const historial = document.getElementById('historial')
+      const lista = document.getElementById('listaPagos')
+
+      if (error || !pagos || pagos.length === 0) {
+        lista.innerHTML = '<div class="vacio">Todavía no hay pagos registrados.</div>'
+        historial.style.display = 'block'
+        return
+      }
+
+      lista.innerHTML = pagos.map(p => {
+        const fecha = new Date(p.fecha_pago).toLocaleDateString('es-AR')
+        const montoFmt = Number(p.monto).toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })
+        return `
+          <div class="pago-item">
+            <div>
+              <div class="periodo">${nombresMes[p.mes]} ${p.anio}</div>
+              <div class="detalle">${p.metodo} · ${fecha}${p.con_recargo ? ' · con recargo' : ''}</div>
+            </div>
+            <div class="monto">${montoFmt}</div>
+          </div>
+        `
+      }).join('')
+
+      historial.style.display = 'block'
+    }
+
+    document.getElementById('formPago').addEventListener('submit', async (e) => {
+      e.preventDefault()
+      document.getElementById('mensajePago').style.display = 'none'
+
+      const anio = parseInt(document.getElementById('anioPago').value)
+      const mes = parseInt(document.getElementById('mesPago').value)
+      const monto = parseFloat(document.getElementById('montoPago').value)
+      const metodo = document.getElementById('metodoPago').value
+
+      if (!anio || !mes || !monto || monto <= 0) {
+        mostrarMensaje('mensajePago', 'Completá año, mes y un monto válido.', 'error')
+        return
+      }
+
+      // Evitar pago duplicado del mismo período
+      const { data: existente } = await db
+        .from('pagos')
+        .select('id')
+        .eq('socio_id', socioActual.id)
+        .eq('anio', anio)
+        .eq('mes', mes)
+        .limit(1)
+
+      if (existente && existente.length > 0) {
+        mostrarMensaje('mensajePago', `Ya existe un pago registrado para ${nombresMes[mes]} ${anio}. Si fue un error, corregilo desde Supabase directamente.`, 'error')
+        return
+      }
+
+      const btn = document.getElementById('btnGuardarPago')
+      btn.disabled = true
+      btn.textContent = 'GUARDANDO...'
+
+      const diaVencimiento = membresiaActual.planes.dia_vencimiento || 10
+      const conRecargo = new Date().getDate() > diaVencimiento && anio === ahora.getFullYear() && mes === (ahora.getMonth() + 1)
+
+      const { error } = await db.from('pagos').insert({
+        socio_id: socioActual.id,
+        membresia_id: membresiaActual.id,
+        monto,
+        metodo,
+        anio,
+        mes,
+        con_recargo: conRecargo
+      })
+
+      btn.disabled = false
+      btn.textContent = 'REGISTRAR PAGO'
+
+      if (error) {
+        mostrarMensaje('mensajePago', 'Error al guardar el pago: ' + error.message, 'error')
+        return
+      }
+
+      mostrarMensaje('mensajePago', `✅ Pago de ${nombresMes[mes]} ${anio} registrado correctamente.`, 'exito')
+      await mostrarTarjetaSocio()
+      await cargarHistorialPagos()
+    })
+  </script>
+</body>
+</html>

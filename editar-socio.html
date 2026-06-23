@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lion Gym Paraná — Editar Socio</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f0f0f;
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2.5rem 1rem 4rem;
+    }
+
+    .logo-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+
+    .logo-area img {
+      width: 90px;
+      height: 90px;
+      object-fit: contain;
+      margin-bottom: 0.6rem;
+      filter: drop-shadow(0 0 18px #cc0000aa);
+    }
+
+    .logo-texto {
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: #cc0000;
+      letter-spacing: 3px;
+    }
+
+    .subtitulo {
+      color: #666;
+      font-size: 0.85rem;
+      margin-top: 0.2rem;
+      letter-spacing: 1px;
+    }
+
+    .nav-links {
+      margin-top: 1rem;
+      display: flex;
+      gap: 1.5rem;
+    }
+
+    .nav-links a {
+      color: #888;
+      text-decoration: none;
+      font-size: 0.9rem;
+      border-bottom: 1px solid transparent;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    .nav-links a:hover {
+      color: #cc0000;
+      border-color: #cc0000;
+    }
+
+    .contenedor {
+      width: 100%;
+      max-width: 480px;
+    }
+
+    .tarjeta {
+      background: #1a1a1a;
+      border: 2px solid #2a2a2a;
+      border-radius: 16px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .tarjeta h2 {
+      font-size: 1.1rem;
+      color: #cc0000;
+      margin-bottom: 1.2rem;
+      letter-spacing: 0.5px;
+    }
+
+    .campo {
+      margin-bottom: 1.1rem;
+    }
+
+    .campo label {
+      display: block;
+      font-size: 0.85rem;
+      color: #aaa;
+      margin-bottom: 0.4rem;
+    }
+
+    .campo .obligatorio { color: #cc0000; }
+
+    .campo input,
+    .campo select {
+      width: 100%;
+      padding: 0.85rem;
+      font-size: 1.05rem;
+      border: 2px solid #333;
+      border-radius: 8px;
+      background: #111;
+      color: white;
+      outline: none;
+      transition: border-color 0.2s;
+      font-family: inherit;
+    }
+
+    .campo input:focus,
+    .campo select:focus {
+      border-color: #cc0000;
+    }
+
+    .fila-doble {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .btn-buscar, .btn-guardar {
+      width: 100%;
+      padding: 1rem;
+      font-size: 1.05rem;
+      font-weight: 700;
+      background: #cc0000;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-buscar:hover, .btn-guardar:hover { background: #aa0000; }
+    .btn-guardar:disabled {
+      background: #555;
+      cursor: not-allowed;
+    }
+
+    .mensaje {
+      margin-top: 1rem;
+      padding: 0.9rem 1rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      display: none;
+      line-height: 1.5;
+    }
+
+    .mensaje.exito {
+      background: #0d2e1a;
+      border: 1px solid #1a7a3a;
+      color: #4cdf7a;
+    }
+
+    .mensaje.error {
+      background: #2e0d0d;
+      border: 1px solid #7a1a1a;
+      color: #df4c4c;
+    }
+
+    .mensaje.info {
+      background: #1a1a2e;
+      border: 1px solid #3a3a7a;
+      color: #8a8adf;
+    }
+
+    .tarjeta-edicion { display: none; }
+
+    .plan-actual-box {
+      background: rgba(255,255,255,0.05);
+      border-radius: 8px;
+      padding: 0.8rem 1rem;
+      font-size: 0.9rem;
+      color: #bbb;
+      margin-bottom: 1.2rem;
+    }
+
+    .aviso-cambio-plan {
+      background: rgba(204,0,0,0.1);
+      border: 1px solid #cc0000;
+      border-radius: 8px;
+      padding: 0.7rem 1rem;
+      font-size: 0.82rem;
+      color: #ff6b6b;
+      margin-bottom: 1.1rem;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="logo-area">
+    <img src="leon.webp" alt="Lion Gym">
+    <div class="logo-texto">LION GYM</div>
+    <div class="subtitulo">PARANÁ — EDITAR SOCIO</div>
+    <div class="nav-links">
+      <a href="alta-socio.html">+ Alta de socio</a>
+      <a href="registro-pagos.html">Registrar pago</a>
+      <a href="recepcion.html">Recepción</a>
+      <a href="#" onclick="cerrarSesion(); return false;">Cerrar sesión</a>
+    </div>
+  </div>
+
+  <div class="contenedor">
+
+    <div class="tarjeta">
+      <h2>BUSCAR SOCIO</h2>
+      <div class="campo">
+        <label>DNI</label>
+        <input type="number" id="inputDNI" placeholder="12345678" autofocus
+          onkeydown="if(event.key==='Enter') buscarSocio()">
+      </div>
+      <button class="btn-buscar" onclick="buscarSocio()">BUSCAR</button>
+      <div class="mensaje" id="mensajeBusqueda"></div>
+    </div>
+
+    <div class="tarjeta tarjeta-edicion" id="tarjetaEdicion">
+      <h2>DATOS DEL SOCIO</h2>
+      <form id="formEdicion">
+        <div class="campo">
+          <label>Nombre completo <span class="obligatorio">*</span></label>
+          <input type="text" id="nombre" required>
+        </div>
+
+        <div class="fila-doble">
+          <div class="campo">
+            <label>DNI</label>
+            <input type="text" id="dni" disabled style="opacity:0.6;">
+          </div>
+          <div class="campo">
+            <label>Teléfono</label>
+            <input type="text" id="telefono">
+          </div>
+        </div>
+
+        <div class="campo">
+          <label>Email</label>
+          <input type="email" id="email">
+        </div>
+
+        <div class="campo">
+          <label>Fecha de nacimiento</label>
+          <input type="date" id="fecha_nacimiento">
+        </div>
+
+        <div class="campo">
+          <label>Socio activo</label>
+          <select id="activo">
+            <option value="true">Sí</option>
+            <option value="false">No (dado de baja)</option>
+          </select>
+        </div>
+
+        <h2 style="margin-top:1.5rem;">PLAN / MEMBRESÍA</h2>
+
+        <div class="plan-actual-box" id="planActualBox"></div>
+
+        <div class="campo">
+          <label>Plan</label>
+          <select id="plan"></select>
+        </div>
+
+        <div class="aviso-cambio-plan" id="avisoCambioPlan">
+          ⚠️ Vas a cambiar el plan. Se cerrará la membresía actual y se creará una nueva a partir de hoy. El historial de pagos anteriores no se modifica.
+        </div>
+
+        <button type="submit" class="btn-guardar" id="btnGuardar">GUARDAR CAMBIOS</button>
+        <div class="mensaje" id="mensajeEdicion"></div>
+      </form>
+    </div>
+
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://hlhsrbstxxdanyckujem.supabase.co'
+    const SUPABASE_KEY = 'sb_publishable_NOA6FfVrGTtkX0eu_rvyZA_Uyye2XRl'
+    const { createClient } = supabase
+    const db = createClient(SUPABASE_URL, SUPABASE_KEY)
+
+    // Protección de acceso: solo administradores logueados
+    async function verificarAcceso() {
+      const { data } = await db.auth.getSession()
+      if (!data.session) {
+        window.location.href = 'login.html'
+        return
+      }
+      const { data: admin } = await db
+        .from('administradores')
+        .select('nombre')
+        .eq('id', data.session.user.id)
+        .eq('activo', true)
+        .limit(1)
+
+      if (!admin || admin.length === 0) {
+        await db.auth.signOut()
+        window.location.href = 'login.html'
+      }
+    }
+    verificarAcceso()
+
+    async function cerrarSesion() {
+      await db.auth.signOut()
+      window.location.href = 'login.html'
+    }
+
+    let socioActual = null
+    let membresiaActual = null
+    let planesDisponibles = []
+
+    function mostrarMensaje(elementoId, texto, tipo) {
+      const el = document.getElementById(elementoId)
+      el.className = `mensaje ${tipo}`
+      el.textContent = texto
+      el.style.display = 'block'
+    }
+
+    async function cargarPlanes() {
+      const { data } = await db
+        .from('planes')
+        .select('*')
+        .eq('activo', true)
+        .order('precio', { ascending: true })
+      planesDisponibles = data || []
+    }
+
+    async function buscarSocio() {
+      const dni = document.getElementById('inputDNI').value.trim()
+      document.getElementById('mensajeBusqueda').style.display = 'none'
+      document.getElementById('tarjetaEdicion').style.display = 'none'
+
+      if (!dni) return
+
+      const { data: socios, error } = await db
+        .from('socios')
+        .select('*')
+        .eq('dni', dni)
+        .limit(1)
+
+      if (error || !socios || socios.length === 0) {
+        mostrarMensaje('mensajeBusqueda', 'No se encontró ningún socio con ese DNI.', 'error')
+        return
+      }
+
+      socioActual = socios[0]
+
+      const { data: membresias } = await db
+        .from('membresias')
+        .select('*, planes(*)')
+        .eq('socio_id', socioActual.id)
+        .eq('estado', 'activa')
+        .order('fecha_inicio', { ascending: false })
+        .limit(1)
+
+      membresiaActual = membresias && membresias.length > 0 ? membresias[0] : null
+
+      llenarFormulario()
+    }
+
+    function llenarFormulario() {
+      document.getElementById('nombre').value = socioActual.nombre
+      document.getElementById('dni').value = socioActual.dni
+      document.getElementById('telefono').value = socioActual.telefono || ''
+      document.getElementById('email').value = socioActual.email || ''
+      document.getElementById('fecha_nacimiento').value = socioActual.fecha_nacimiento || ''
+      document.getElementById('activo').value = socioActual.activo ? 'true' : 'false'
+
+      const selectPlan = document.getElementById('plan')
+      const planActualBox = document.getElementById('planActualBox')
+
+      if (!membresiaActual) {
+        planActualBox.textContent = 'Este socio no tiene una membresía activa actualmente.'
+      } else {
+        const precioFmt = Number(membresiaActual.planes.precio).toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })
+        planActualBox.textContent = `Plan actual: ${membresiaActual.planes.nombre} (${precioFmt}) — desde ${new Date(membresiaActual.fecha_inicio).toLocaleDateString('es-AR')}`
+      }
+
+      selectPlan.innerHTML = planesDisponibles.map(p => {
+        const precioFmt = Number(p.precio).toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })
+        const seleccionado = membresiaActual && membresiaActual.plan_id === p.id ? 'selected' : ''
+        return `<option value="${p.id}" ${seleccionado}>${p.nombre} — ${precioFmt}</option>`
+      }).join('')
+
+      document.getElementById('avisoCambioPlan').style.display = 'none'
+
+      selectPlan.onchange = () => {
+        const cambioPlan = !membresiaActual || selectPlan.value !== membresiaActual.plan_id
+        document.getElementById('avisoCambioPlan').style.display = cambioPlan ? 'block' : 'none'
+      }
+
+      document.getElementById('tarjetaEdicion').style.display = 'block'
+    }
+
+    document.getElementById('formEdicion').addEventListener('submit', async (e) => {
+      e.preventDefault()
+      document.getElementById('mensajeEdicion').style.display = 'none'
+
+      const nombre = document.getElementById('nombre').value.trim()
+      const telefono = document.getElementById('telefono').value.trim()
+      const email = document.getElementById('email').value.trim()
+      const fecha_nacimiento = document.getElementById('fecha_nacimiento').value || null
+      const activo = document.getElementById('activo').value === 'true'
+      const planSeleccionado = document.getElementById('plan').value
+
+      if (!nombre) {
+        mostrarMensaje('mensajeEdicion', 'El nombre es obligatorio.', 'error')
+        return
+      }
+
+      const btn = document.getElementById('btnGuardar')
+      btn.disabled = true
+      btn.textContent = 'GUARDANDO...'
+
+      // 1) Actualizar datos del socio
+      const { error: errorSocio } = await db
+        .from('socios')
+        .update({ nombre, telefono: telefono || null, email: email || null, fecha_nacimiento, activo })
+        .eq('id', socioActual.id)
+
+      if (errorSocio) {
+        mostrarMensaje('mensajeEdicion', 'Error al actualizar datos: ' + errorSocio.message, 'error')
+        btn.disabled = false
+        btn.textContent = 'GUARDAR CAMBIOS'
+        return
+      }
+
+      // 2) Si cambió el plan (o no tenía membresía), cerrar la vieja y crear una nueva
+      const cambioPlan = !membresiaActual || planSeleccionado !== membresiaActual.plan_id
+
+      if (cambioPlan && planSeleccionado) {
+        if (membresiaActual) {
+          const hoy = new Date().toISOString().split('T')[0]
+          await db
+            .from('membresias')
+            .update({ estado: 'finalizada', activo: false, fecha_fin: hoy })
+            .eq('id', membresiaActual.id)
+        }
+
+        const { error: errorNuevaMembresia } = await db
+          .from('membresias')
+          .insert({
+            socio_id: socioActual.id,
+            plan_id: planSeleccionado,
+            fecha_inicio: new Date().toISOString().split('T')[0],
+            estado: 'activa',
+            activo: true
+          })
+
+        if (errorNuevaMembresia) {
+          mostrarMensaje('mensajeEdicion', 'Los datos se guardaron, pero hubo un error al actualizar el plan: ' + errorNuevaMembresia.message, 'error')
+          btn.disabled = false
+          btn.textContent = 'GUARDAR CAMBIOS'
+          return
+        }
+      }
+
+      mostrarMensaje('mensajeEdicion', '✅ Cambios guardados correctamente.', 'exito')
+      btn.disabled = false
+      btn.textContent = 'GUARDAR CAMBIOS'
+
+      // Recargar para reflejar el estado actualizado
+      await buscarSocioSilencioso()
+    })
+
+    async function buscarSocioSilencioso() {
+      const { data: membresias } = await db
+        .from('membresias')
+        .select('*, planes(*)')
+        .eq('socio_id', socioActual.id)
+        .eq('estado', 'activa')
+        .order('fecha_inicio', { ascending: false })
+        .limit(1)
+
+      membresiaActual = membresias && membresias.length > 0 ? membresias[0] : null
+      llenarFormulario()
+    }
+
+    cargarPlanes()
+  </script>
+</body>
+</html>

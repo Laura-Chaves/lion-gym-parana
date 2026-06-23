@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lion Gym Paraná — Acceso Administrador</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f0f0f;
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logo-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+
+    .logo-area img {
+      width: 100px;
+      height: 100px;
+      object-fit: contain;
+      margin-bottom: 0.8rem;
+      filter: drop-shadow(0 0 18px #cc0000aa);
+    }
+
+    .logo-texto {
+      font-size: 2rem;
+      font-weight: 900;
+      color: #cc0000;
+      letter-spacing: 3px;
+    }
+
+    .subtitulo {
+      color: #666;
+      font-size: 0.85rem;
+      margin-top: 0.2rem;
+      letter-spacing: 1px;
+    }
+
+    .caja-login {
+      background: #1a1a1a;
+      border: 2px solid #2a2a2a;
+      border-radius: 16px;
+      padding: 2.5rem;
+      width: 380px;
+    }
+
+    .campo {
+      margin-bottom: 1.2rem;
+    }
+
+    .campo label {
+      display: block;
+      font-size: 0.85rem;
+      color: #aaa;
+      margin-bottom: 0.4rem;
+    }
+
+    .campo input {
+      width: 100%;
+      padding: 0.9rem;
+      font-size: 1rem;
+      border: 2px solid #333;
+      border-radius: 8px;
+      background: #111;
+      color: white;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .campo input:focus {
+      border-color: #cc0000;
+    }
+
+    .btn-login {
+      width: 100%;
+      padding: 1rem;
+      font-size: 1.05rem;
+      font-weight: 700;
+      background: #cc0000;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-top: 0.5rem;
+    }
+
+    .btn-login:hover { background: #aa0000; }
+    .btn-login:disabled {
+      background: #555;
+      cursor: not-allowed;
+    }
+
+    .mensaje {
+      margin-top: 1rem;
+      padding: 0.9rem 1rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      display: none;
+      line-height: 1.5;
+      background: #2e0d0d;
+      border: 1px solid #7a1a1a;
+      color: #df4c4c;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="logo-area">
+    <img src="leon.webp" alt="Lion Gym">
+    <div class="logo-texto">LION GYM</div>
+    <div class="subtitulo">PARANÁ — ACCESO ADMINISTRADOR</div>
+  </div>
+
+  <div class="caja-login">
+    <form id="formLogin">
+      <div class="campo">
+        <label>Email</label>
+        <input type="email" id="email" required placeholder="admin@liongym.com" autofocus>
+      </div>
+      <div class="campo">
+        <label>Contraseña</label>
+        <input type="password" id="password" required placeholder="••••••••">
+      </div>
+      <button type="submit" class="btn-login" id="btnLogin">INGRESAR</button>
+      <div class="mensaje" id="mensaje"></div>
+    </form>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://hlhsrbstxxdanyckujem.supabase.co'
+    const SUPABASE_KEY = 'sb_publishable_NOA6FfVrGTtkX0eu_rvyZA_Uyye2XRl'
+    const { createClient } = supabase
+    const db = createClient(SUPABASE_URL, SUPABASE_KEY)
+
+    const formLogin = document.getElementById('formLogin')
+    const btnLogin = document.getElementById('btnLogin')
+    const mensaje = document.getElementById('mensaje')
+
+    // Si ya hay una sesión activa, lo mandamos directo al panel
+    async function verificarSesionExistente() {
+      const { data } = await db.auth.getSession()
+      if (data.session) {
+        window.location.href = 'alta-socio.html'
+      }
+    }
+    verificarSesionExistente()
+
+    function mostrarError(texto) {
+      mensaje.textContent = texto
+      mensaje.style.display = 'block'
+    }
+
+    formLogin.addEventListener('submit', async (e) => {
+      e.preventDefault()
+      mensaje.style.display = 'none'
+
+      const email = document.getElementById('email').value.trim()
+      const password = document.getElementById('password').value
+
+      btnLogin.disabled = true
+      btnLogin.textContent = 'INGRESANDO...'
+
+      const { data, error } = await db.auth.signInWithPassword({ email, password })
+
+      if (error) {
+        mostrarError('Email o contraseña incorrectos.')
+        btnLogin.disabled = false
+        btnLogin.textContent = 'INGRESAR'
+        return
+      }
+
+      // Verificar que además esté en la tabla administradores y activo
+      const { data: admin } = await db
+        .from('administradores')
+        .select('*')
+        .eq('id', data.user.id)
+        .eq('activo', true)
+        .limit(1)
+
+      if (!admin || admin.length === 0) {
+        mostrarError('Este usuario no tiene permisos de administrador.')
+        await db.auth.signOut()
+        btnLogin.disabled = false
+        btnLogin.textContent = 'INGRESAR'
+        return
+      }
+
+      window.location.href = 'alta-socio.html'
+    })
+  </script>
+</body>
+</html>

@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lion Gym Paraná — Recepción</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f0f0f;
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logo-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+
+    .logo-area img {
+      width: 110px;
+      height: 110px;
+      object-fit: contain;
+      margin-bottom: 0.8rem;
+      filter: drop-shadow(0 0 18px #cc0000aa);
+    }
+
+    .logo-texto {
+      font-size: 2.2rem;
+      font-weight: 900;
+      color: #cc0000;
+      letter-spacing: 3px;
+    }
+
+    .subtitulo {
+      color: #666;
+      font-size: 0.9rem;
+      margin-top: 0.2rem;
+      letter-spacing: 1px;
+    }
+
+    .nav-links {
+      margin-top: 1rem;
+      display: flex;
+      gap: 1.5rem;
+    }
+
+    .nav-links a {
+      color: #888;
+      text-decoration: none;
+      font-size: 0.9rem;
+      border-bottom: 1px solid transparent;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    .nav-links a:hover {
+      color: #cc0000;
+      border-color: #cc0000;
+    }
+
+    .caja-dni {
+      background: #1a1a1a;
+      border: 2px solid #2a2a2a;
+      border-radius: 16px;
+      padding: 2.5rem;
+      width: 420px;
+      text-align: center;
+    }
+
+    .caja-dni label {
+      display: block;
+      font-size: 1rem;
+      color: #aaa;
+      margin-bottom: 1rem;
+    }
+
+    .caja-dni input {
+      width: 100%;
+      padding: 1rem;
+      font-size: 2rem;
+      text-align: center;
+      letter-spacing: 6px;
+      border: 2px solid #333;
+      border-radius: 10px;
+      background: #111;
+      color: white;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .caja-dni input:focus {
+      border-color: #cc0000;
+    }
+
+    .btn-entrar {
+      margin-top: 1.2rem;
+      width: 100%;
+      padding: 1rem;
+      font-size: 1.1rem;
+      font-weight: 700;
+      background: #cc0000;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-entrar:hover { background: #aa0000; }
+
+    .resultado {
+      margin-top: 2rem;
+      width: 420px;
+      border-radius: 16px;
+      padding: 1.8rem;
+      display: none;
+      animation: aparecer 0.3s ease;
+    }
+
+    @keyframes aparecer {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .resultado.al-dia {
+      background: #0d2e1a;
+      border: 2px solid #1a7a3a;
+    }
+
+    .resultado.debe {
+      background: #2e0d0d;
+      border: 2px solid #7a1a1a;
+    }
+
+    .resultado.neutral {
+      background: #1a1a1a;
+      border: 2px solid #333;
+    }
+
+    .resultado.no-encontrado {
+      background: #1a1a2e;
+      border: 2px solid #3a3a7a;
+    }
+
+    .resultado .estado {
+      font-size: 1.5rem;
+      font-weight: 800;
+      margin-bottom: 0.5rem;
+    }
+
+    .al-dia .estado { color: #4cdf7a; }
+    .debe .estado   { color: #df4c4c; }
+    .neutral .estado { color: #ccc; }
+    .no-encontrado .estado { color: #7a7adf; }
+
+    .resultado .nombre {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .resultado .info {
+      font-size: 0.95rem;
+      color: #bbb;
+      line-height: 1.8;
+    }
+
+    .resultado .monto-recargo {
+      margin-top: 1rem;
+      padding: 0.8rem;
+      background: rgba(255,255,255,0.05);
+      border-radius: 8px;
+      font-size: 0.95rem;
+    }
+
+    .resultado .advertencia-doble {
+      margin-top: 0.8rem;
+      padding: 0.6rem 1rem;
+      background: #2a0000;
+      border: 1px solid #cc0000;
+      border-radius: 8px;
+      color: #cc0000;
+      font-size: 0.9rem;
+    }
+
+    .hora-actual {
+      position: fixed;
+      top: 1.5rem;
+      right: 2rem;
+      color: #555;
+      font-size: 1rem;
+    }
+
+    .loading {
+      color: #888;
+      font-size: 1rem;
+      margin-top: 1rem;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="hora-actual" id="reloj"></div>
+
+  <div class="logo-area">
+    <img src="leon.webp" alt="Lion Gym">
+    <div class="logo-texto">LION GYM</div>
+    <div class="subtitulo">PARANÁ — SISTEMA DE ACCESO</div>
+    <div class="nav-links">
+      <a href="alta-socio.html">+ Alta de socio</a>
+      <a href="index.html">Inicio</a>
+    </div>
+  </div>
+
+  <div class="caja-dni">
+    <label>Ingresá tu DNI para registrar tu ingreso</label>
+    <input
+      type="number"
+      id="inputDNI"
+      placeholder="12345678"
+      autofocus
+      onkeydown="if(event.key==='Enter') buscarSocio()"
+    />
+    <button class="btn-entrar" onclick="buscarSocio()">REGISTRAR INGRESO</button>
+    <div class="loading" id="loading">Buscando...</div>
+  </div>
+
+  <div class="resultado" id="resultado"></div>
+
+  <script>
+    const SUPABASE_URL = 'https://hlhsrbstxxdanyckujem.supabase.co'
+    const SUPABASE_KEY = 'sb_publishable_NOA6FfVrGTtkX0eu_rvyZA_Uyye2XRl'
+    const { createClient } = supabase
+    const db = createClient(SUPABASE_URL, SUPABASE_KEY)
+
+    // Mientras el módulo de pagos no esté activo, no mostramos "PENDIENTE" como alarma.
+    // Lo activamos recién cuando empecemos a cargar pagos reales (mes que viene).
+    const MODULO_PAGOS_ACTIVO = false
+
+    function actualizarReloj() {
+      const ahora = new Date()
+      document.getElementById('reloj').textContent =
+        ahora.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    }
+    setInterval(actualizarReloj, 1000)
+    actualizarReloj()
+
+    async function buscarSocio() {
+      const dni = document.getElementById('inputDNI').value.trim()
+      if (!dni) return
+
+      const loading = document.getElementById('loading')
+      const resultado = document.getElementById('resultado')
+      loading.style.display = 'block'
+      resultado.style.display = 'none'
+
+      const { data: socios, error } = await db
+        .from('socios')
+        .select('*')
+        .eq('dni', dni)
+        .limit(1)
+
+      loading.style.display = 'none'
+
+      if (error || !socios || socios.length === 0) {
+        mostrarNoEncontrado(dni)
+        return
+      }
+
+      const socio = socios[0]
+
+      const { data: membresias } = await db
+        .from('membresias')
+        .select('*, planes(*)')
+        .eq('socio_id', socio.id)
+        .eq('estado', 'activa')
+        .limit(1)
+
+      const membresia = membresias && membresias.length > 0 ? membresias[0] : null
+
+      const ahora = new Date()
+      const anioActual = ahora.getFullYear()
+      const mesActual = ahora.getMonth() + 1
+      const diaActual = ahora.getDate()
+
+      let pagado = false
+      let conRecargo = false
+      let montoAPagar = 0
+
+      if (membresia && MODULO_PAGOS_ACTIVO) {
+        const { data: pagosDelMes } = await db
+          .from('pagos')
+          .select('*')
+          .eq('socio_id', socio.id)
+          .eq('anio', anioActual)
+          .eq('mes', mesActual)
+          .limit(1)
+
+        pagado = pagosDelMes && pagosDelMes.length > 0
+
+        if (!pagado) {
+          const precio = membresia.planes.precio
+          const diaVencimiento = membresia.planes.dia_vencimiento || 10
+          const recargo = membresia.planes.porcentaje_recargo || 15
+          conRecargo = diaActual > diaVencimiento
+          montoAPagar = conRecargo ? precio * (1 + recargo / 100) : precio
+        }
+      }
+
+      const hoyInicio = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate()).toISOString()
+      const { data: ingresosHoy } = await db
+        .from('asistencia')
+        .select('*')
+        .eq('socio_id', socio.id)
+        .gte('fecha_hora', hoyInicio)
+
+      const cantidadHoy = ingresosHoy ? ingresosHoy.length : 0
+
+      await db.from('asistencia').insert({ socio_id: socio.id })
+
+      mostrarResultado(socio, membresia, pagado, conRecargo, montoAPagar, cantidadHoy)
+
+      setTimeout(() => {
+        document.getElementById('inputDNI').value = ''
+        document.getElementById('resultado').style.display = 'none'
+        document.getElementById('inputDNI').focus()
+      }, 4000)
+    }
+
+    function mostrarResultado(socio, membresia, pagado, conRecargo, montoAPagar, ingresosHoy) {
+      const resultado = document.getElementById('resultado')
+      const nombreMes = new Date().toLocaleString('es-AR', { month: 'long' })
+
+      let html = ''
+
+      if (!membresia) {
+        resultado.className = 'resultado debe'
+        html = `
+          <div class="estado">⛔ SIN MEMBRESÍA</div>
+          <div class="nombre">${socio.nombre}</div>
+          <div class="info">No tiene una membresía activa.<br>Consultá en recepción.</div>
+        `
+      } else if (!MODULO_PAGOS_ACTIVO) {
+        // Etapa de carga inicial: todavía no controlamos pagos, solo damos acceso.
+        resultado.className = 'resultado neutral'
+        html = `
+          <div class="estado">✅ ACCESO PERMITIDO</div>
+          <div class="nombre">${socio.nombre}</div>
+          <div class="info">
+            Plan: ${membresia.planes.nombre}<br>
+            Control de cuotas: <strong style="color:#ccc">aún no activo</strong>
+          </div>
+          ${ingresosHoy > 0 ? `<div class="advertencia-doble">⚠️ Ya registraste un ingreso hoy (${ingresosHoy} ${ingresosHoy === 1 ? 'vez' : 'veces'})</div>` : ''}
+        `
+      } else if (pagado) {
+        resultado.className = 'resultado al-dia'
+        html = `
+          <div class="estado">✅ ACCESO PERMITIDO</div>
+          <div class="nombre">${socio.nombre}</div>
+          <div class="info">
+            Plan: ${membresia.planes.nombre}<br>
+            Cuota de ${nombreMes}: <strong style="color:#4cdf7a">PAGADA</strong>
+          </div>
+          ${ingresosHoy > 0 ? `<div class="advertencia-doble">⚠️ Ya registraste un ingreso hoy (${ingresosHoy} ${ingresosHoy === 1 ? 'vez' : 'veces'})</div>` : ''}
+        `
+      } else {
+        resultado.className = 'resultado debe'
+        const montoFormateado = montoAPagar.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })
+        html = `
+          <div class="estado">⚠️ CUOTA PENDIENTE</div>
+          <div class="nombre">${socio.nombre}</div>
+          <div class="info">
+            Plan: ${membresia.planes.nombre}<br>
+            Cuota de ${nombreMes}: <strong style="color:#df4c4c">NO PAGADA</strong>
+          </div>
+          <div class="monto-recargo">
+            ${conRecargo
+              ? `💸 Monto con recargo del 15%: <strong style="color:#cc0000">${montoFormateado}</strong>`
+              : `💰 Monto a pagar: <strong style="color:#fff">${montoFormateado}</strong> (hasta el día 10)`
+            }
+          </div>
+          ${ingresosHoy > 0 ? `<div class="advertencia-doble">⚠️ Ya registraste un ingreso hoy (${ingresosHoy} ${ingresosHoy === 1 ? 'vez' : 'veces'})</div>` : ''}
+        `
+      }
+
+      resultado.innerHTML = html
+      resultado.style.display = 'block'
+    }
+
+    function mostrarNoEncontrado(dni) {
+      const resultado = document.getElementById('resultado')
+      resultado.className = 'resultado no-encontrado'
+      resultado.innerHTML = `
+        <div class="estado">❓ DNI NO ENCONTRADO</div>
+        <div class="nombre">DNI: ${dni}</div>
+        <div class="info">Este DNI no está registrado en el sistema.<br>Consultá en recepción para darte de alta.</div>
+      `
+      resultado.style.display = 'block'
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lion Gym Paraná — Alta de Socio</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f0f0f;
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2.5rem 1rem 4rem;
+    }
+
+    .logo-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+
+    .logo-area img {
+      width: 100px;
+      height: 100px;
+      object-fit: contain;
+      margin-bottom: 0.6rem;
+      filter: drop-shadow(0 0 18px #cc0000aa);
+    }
+
+    .logo-texto {
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: #cc0000;
+      letter-spacing: 3px;
+    }
+
+    .subtitulo {
+      color: #666;
+      font-size: 0.85rem;
+      margin-top: 0.2rem;
+      letter-spacing: 1px;
+    }
+
+    .nav-links {
+      margin-top: 1rem;
+      display: flex;
+      gap: 1.5rem;
+    }
+
+    .nav-links a {
+      color: #888;
+      text-decoration: none;
+      font-size: 0.9rem;
+      border-bottom: 1px solid transparent;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    .nav-links a:hover {
+      color: #cc0000;
+      border-color: #cc0000;
+    }
+
+    .contenedor {
+      width: 100%;
+      max-width: 480px;
+    }
+
+    .tarjeta {
+      background: #1a1a1a;
+      border: 2px solid #2a2a2a;
+      border-radius: 16px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .tarjeta h2 {
+      font-size: 1.2rem;
+      color: #cc0000;
+      margin-bottom: 1.5rem;
+      letter-spacing: 0.5px;
+    }
+
+    .campo {
+      margin-bottom: 1.2rem;
+    }
+
+    .campo label {
+      display: block;
+      font-size: 0.85rem;
+      color: #aaa;
+      margin-bottom: 0.4rem;
+    }
+
+    .campo .obligatorio {
+      color: #cc0000;
+    }
+
+    .campo input,
+    .campo select {
+      width: 100%;
+      padding: 0.8rem;
+      font-size: 1rem;
+      border: 2px solid #333;
+      border-radius: 8px;
+      background: #111;
+      color: white;
+      outline: none;
+      transition: border-color 0.2s;
+      font-family: inherit;
+    }
+
+    .campo input:focus,
+    .campo select:focus {
+      border-color: #cc0000;
+    }
+
+    .fila-doble {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .btn-guardar {
+      width: 100%;
+      padding: 1rem;
+      font-size: 1.05rem;
+      font-weight: 700;
+      background: #cc0000;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-top: 0.5rem;
+    }
+
+    .btn-guardar:hover { background: #aa0000; }
+    .btn-guardar:disabled {
+      background: #555;
+      cursor: not-allowed;
+    }
+
+    .mensaje {
+      margin-top: 1rem;
+      padding: 0.9rem 1rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      display: none;
+      line-height: 1.5;
+    }
+
+    .mensaje.exito {
+      background: #0d2e1a;
+      border: 1px solid #1a7a3a;
+      color: #4cdf7a;
+    }
+
+    .mensaje.error {
+      background: #2e0d0d;
+      border: 1px solid #7a1a1a;
+      color: #df4c4c;
+    }
+
+    .lista-socios {
+      background: #1a1a1a;
+      border: 2px solid #2a2a2a;
+      border-radius: 16px;
+      padding: 1.5rem;
+    }
+
+    .lista-socios h2 {
+      font-size: 1.1rem;
+      color: #ccc;
+      margin-bottom: 1rem;
+    }
+
+    .socio-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.8rem 0;
+      border-bottom: 1px solid #2a2a2a;
+      font-size: 0.9rem;
+    }
+
+    .socio-item:last-child { border-bottom: none; }
+
+    .socio-item .nombre-item { font-weight: 600; }
+    .socio-item .dni-item { color: #888; font-size: 0.85rem; }
+    .socio-item .plan-item {
+      color: #cc0000;
+      font-size: 0.8rem;
+      background: #2a0000;
+      padding: 0.2rem 0.6rem;
+      border-radius: 6px;
+    }
+
+    .vacio {
+      color: #666;
+      font-size: 0.85rem;
+      text-align: center;
+      padding: 1rem 0;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="logo-area">
+    <img src="leon.webp" alt="Lion Gym">
+
+    <div class="logo-texto">LION GYM</div>
+    <div class="subtitulo">PARANÁ — ALTA DE SOCIOS</div>
+    <div class="nav-links">
+      <a href="recepcion.html">← Recepción</a>
+      <a href="editar-socio.html">Editar socio</a>
+      <a href="registro-pagos.html">Registrar pago</a>
+      <a href="index.html">Inicio</a>
+      <a href="#" onclick="cerrarSesion(); return false;">Cerrar sesión</a>
+    </div>
+  </div>
+
+  <div class="contenedor">
+
+    <div class="tarjeta">
+      <h2>DATOS DEL SOCIO</h2>
+      <form id="formAlta">
+        <div class="campo">
+          <label>Nombre completo <span class="obligatorio">*</span></label>
+          <input type="text" id="nombre" required placeholder="Nombre y apellido">
+        </div>
+
+        <div class="fila-doble">
+          <div class="campo">
+            <label>DNI <span class="obligatorio">*</span></label>
+            <input type="number" id="dni" required placeholder="12345678">
+          </div>
+          <div class="campo">
+            <label>Teléfono</label>
+            <input type="text" id="telefono" placeholder="343 1234567">
+          </div>
+        </div>
+
+        <div class="campo">
+          <label>Email</label>
+          <input type="email" id="email" placeholder="correo@ejemplo.com">
+        </div>
+
+        <div class="campo">
+          <label>Fecha de nacimiento</label>
+          <input type="date" id="fecha_nacimiento">
+        </div>
+
+        <h2 style="margin-top: 1.5rem;">MEMBRESÍA</h2>
+
+        <div class="campo">
+          <label>Plan <span class="obligatorio">*</span></label>
+          <select id="plan" required>
+            <option value="">Cargando planes...</option>
+          </select>
+        </div>
+
+        <div class="campo">
+          <label>Fecha de inicio <span class="obligatorio">*</span></label>
+          <input type="date" id="fecha_inicio" required>
+        </div>
+
+        <button type="submit" class="btn-guardar" id="btnGuardar">GUARDAR SOCIO</button>
+
+        <div class="mensaje" id="mensaje"></div>
+      </form>
+    </div>
+
+    <div class="lista-socios">
+      <h2>Últimos socios cargados</h2>
+      <div id="listaSocios">
+        <div class="vacio">Cargando...</div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://hlhsrbstxxdanyckujem.supabase.co'
+    const SUPABASE_KEY = 'sb_publishable_NOA6FfVrGTtkX0eu_rvyZA_Uyye2XRl'
+    const { createClient } = supabase
+    const db = createClient(SUPABASE_URL, SUPABASE_KEY)
+
+    // Protección de acceso: si no hay sesión de administrador, lo mandamos al login
+    async function verificarAcceso() {
+      const { data } = await db.auth.getSession()
+      if (!data.session) {
+        window.location.href = 'login.html'
+        return
+      }
+      const { data: admin } = await db
+        .from('administradores')
+        .select('nombre')
+        .eq('id', data.session.user.id)
+        .eq('activo', true)
+        .limit(1)
+
+      if (!admin || admin.length === 0) {
+        await db.auth.signOut()
+        window.location.href = 'login.html'
+      }
+    }
+    verificarAcceso()
+
+    async function cerrarSesion() {
+      await db.auth.signOut()
+      window.location.href = 'login.html'
+    }
+
+    const formAlta = document.getElementById('formAlta')
+    const btnGuardar = document.getElementById('btnGuardar')
+    const mensaje = document.getElementById('mensaje')
+    const selectPlan = document.getElementById('plan')
+
+    // Fecha de inicio por defecto: hoy
+    document.getElementById('fecha_inicio').value = new Date().toISOString().split('T')[0]
+
+    async function cargarPlanes() {
+      const { data: planes, error } = await db
+        .from('planes')
+        .select('*')
+        .eq('activo', true)
+        .order('precio', { ascending: true })
+
+      if (error || !planes || planes.length === 0) {
+        selectPlan.innerHTML = '<option value="">No hay planes disponibles</option>'
+        return
+      }
+
+      selectPlan.innerHTML = '<option value="">Seleccioná un plan</option>' +
+        planes.map(p => {
+          const precioFmt = Number(p.precio).toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })
+          return `<option value="${p.id}">${p.nombre} — ${precioFmt}</option>`
+        }).join('')
+    }
+
+    async function cargarUltimosSocios() {
+      const lista = document.getElementById('listaSocios')
+
+      const { data: socios, error } = await db
+        .from('socios')
+        .select('id, nombre, dni, created_at, membresias(estado, planes(nombre))')
+        .order('created_at', { ascending: false })
+        .limit(8)
+
+      if (error || !socios || socios.length === 0) {
+        lista.innerHTML = '<div class="vacio">Todavía no hay socios cargados.</div>'
+        return
+      }
+
+      lista.innerHTML = socios.map(s => {
+        const membresiaActiva = s.membresias && s.membresias.length > 0 ? s.membresias[s.membresias.length - 1] : null
+        const planNombre = membresiaActiva && membresiaActiva.planes ? membresiaActiva.planes.nombre : 'Sin plan'
+        return `
+          <div class="socio-item">
+            <div>
+              <div class="nombre-item">${s.nombre}</div>
+              <div class="dni-item">DNI: ${s.dni}</div>
+            </div>
+            <div class="plan-item">${planNombre}</div>
+          </div>
+        `
+      }).join('')
+    }
+
+    function mostrarMensaje(texto, tipo) {
+      mensaje.className = `mensaje ${tipo}`
+      mensaje.textContent = texto
+      mensaje.style.display = 'block'
+    }
+
+    formAlta.addEventListener('submit', async (e) => {
+      e.preventDefault()
+      mensaje.style.display = 'none'
+
+      const nombre = document.getElementById('nombre').value.trim()
+      const dni = document.getElementById('dni').value.trim()
+      const email = document.getElementById('email').value.trim()
+      const telefono = document.getElementById('telefono').value.trim()
+      const fecha_nacimiento = document.getElementById('fecha_nacimiento').value || null
+      const planId = document.getElementById('plan').value
+      const fecha_inicio = document.getElementById('fecha_inicio').value
+
+      if (!nombre || !dni || !planId || !fecha_inicio) {
+        mostrarMensaje('Completá los campos obligatorios (*).', 'error')
+        return
+      }
+
+      btnGuardar.disabled = true
+      btnGuardar.textContent = 'GUARDANDO...'
+
+      // 1) Verificar que el DNI no exista ya
+      const { data: existente } = await db
+        .from('socios')
+        .select('id, nombre')
+        .eq('dni', dni)
+        .limit(1)
+
+      if (existente && existente.length > 0) {
+        mostrarMensaje(`Ya existe un socio con ese DNI: ${existente[0].nombre}.`, 'error')
+        btnGuardar.disabled = false
+        btnGuardar.textContent = 'GUARDAR SOCIO'
+        return
+      }
+
+      // 2) Crear el socio
+      const { data: nuevoSocio, error: errorSocio } = await db
+        .from('socios')
+        .insert({
+          nombre,
+          dni,
+          email: email || null,
+          telefono: telefono || null,
+          fecha_nacimiento
+        })
+        .select()
+        .single()
+
+      if (errorSocio) {
+        mostrarMensaje('Error al crear el socio: ' + errorSocio.message, 'error')
+        btnGuardar.disabled = false
+        btnGuardar.textContent = 'GUARDAR SOCIO'
+        return
+      }
+
+      // 3) Crear la membresía asociada
+      const { error: errorMembresia } = await db
+        .from('membresias')
+        .insert({
+          socio_id: nuevoSocio.id,
+          plan_id: planId,
+          fecha_inicio,
+          estado: 'activa',
+          activo: true
+        })
+
+      if (errorMembresia) {
+        mostrarMensaje('El socio se creó, pero hubo un error al asignar la membresía: ' + errorMembresia.message, 'error')
+        btnGuardar.disabled = false
+        btnGuardar.textContent = 'GUARDAR SOCIO'
+        cargarUltimosSocios()
+        return
+      }
+
+      mostrarMensaje(`✅ Socio "${nombre}" creado correctamente con su membresía.`, 'exito')
+      formAlta.reset()
+      document.getElementById('fecha_inicio').value = new Date().toISOString().split('T')[0]
+      btnGuardar.disabled = false
+      btnGuardar.textContent = 'GUARDAR SOCIO'
+      cargarUltimosSocios()
+    })
+
+    cargarPlanes()
+    cargarUltimosSocios()
+  </script>
+</body>
+</html>
