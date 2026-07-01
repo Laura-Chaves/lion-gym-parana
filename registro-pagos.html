@@ -51,6 +51,8 @@
     .nav-links {
       margin-top: 1rem;
       display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
       gap: 1.5rem;
     }
 
@@ -217,6 +219,12 @@
       margin-bottom: 1.1rem;
     }
 
+    .nota-recargo.dentro-plazo {
+      background: rgba(76,223,122,0.08);
+      border-color: #1a7a3a;
+      color: #4cdf7a;
+    }
+
     .historial {
       background: #1a1a1a;
       border: 2px solid #2a2a2a;
@@ -261,8 +269,11 @@
     <div class="logo-texto">LION GYM</div>
     <div class="subtitulo">PARANÁ — REGISTRO DE PAGOS</div>
     <div class="nav-links">
+      <a href="panel-general.html">Panel general</a>
       <a href="alta-socio.html">+ Alta de socio</a>
+      <a href="editar-socio.html">Editar socio</a>
       <a href="recepcion.html">Recepción</a>
+      <a href="index.html">Inicio</a>
       <a href="#" onclick="cerrarSesion(); return false;">Cerrar sesión</a>
     </div>
   </div>
@@ -456,11 +467,11 @@
 
       if (yaPagoEsteMes) {
         badge.className = 'badge-estado badge-pagado'
-        badge.textContent = `✅ ${nombresMes[mesActual]} PAGADO`
+        badge.textContent = `${nombresMes[mesActual]} PAGADO`
         notaRecargo.innerHTML = ''
       } else {
         badge.className = 'badge-estado badge-pendiente'
-        badge.textContent = `⚠️ ${nombresMes[mesActual]} PENDIENTE`
+        badge.textContent = `${nombresMes[mesActual]} PENDIENTE`
 
         const diaVencimiento = membresiaActual.planes.dia_vencimiento || 10
         const recargo = membresiaActual.planes.porcentaje_recargo || 15
@@ -469,9 +480,9 @@
         const montoSugerido = conRecargo ? precio * (1 + recargo / 100) : precio
 
         if (conRecargo) {
-          notaRecargo.innerHTML = `<div class="nota-recargo">💸 Estamos después del día ${diaVencimiento}: corresponde recargo del ${recargo}%. Monto sugerido: ${montoSugerido.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}</div>`
+          notaRecargo.innerHTML = `<div class="nota-recargo">Estamos después del día ${diaVencimiento}: corresponde recargo del ${recargo}%. Monto sugerido: ${montoSugerido.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}</div>`
         } else {
-          notaRecargo.innerHTML = `<div class="nota-recargo" style="background:rgba(76,223,122,0.08); border-color:#1a7a3a; color:#4cdf7a;">💰 Dentro del plazo (hasta el día ${diaVencimiento}). Monto sugerido: ${montoSugerido.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}</div>`
+          notaRecargo.innerHTML = `<div class="nota-recargo dentro-plazo">Dentro del plazo (hasta el día ${diaVencimiento}). Monto sugerido: ${montoSugerido.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })}</div>`
         }
 
         document.getElementById('montoPago').value = montoSugerido.toFixed(2)
@@ -567,7 +578,7 @@
         return
       }
 
-      mostrarMensaje('mensajePago', `✅ Pago de ${nombresMes[mes]} ${anio} registrado correctamente.`, 'exito')
+      mostrarMensaje('mensajePago', `Pago de ${nombresMes[mes]} ${anio} registrado correctamente.`, 'exito')
       await mostrarTarjetaSocio()
       await cargarHistorialPagos()
     })
