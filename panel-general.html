@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lion Gym Paraná — Panel General</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f0f0f;
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2.5rem 1rem 4rem;
+    }
+
+    .logo-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+
+    .logo-area img {
+      width: 90px;
+      height: 90px;
+      object-fit: contain;
+      margin-bottom: 0.6rem;
+      filter: drop-shadow(0 0 18px #cc0000aa);
+    }
+
+    .logo-texto {
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: #cc0000;
+      letter-spacing: 3px;
+    }
+
+    .subtitulo {
+      color: #666;
+      font-size: 0.85rem;
+      margin-top: 0.2rem;
+      letter-spacing: 1px;
+    }
+
+    .nav-links {
+      margin-top: 1rem;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1.5rem;
+    }
+
+    .nav-links a {
+      color: #888;
+      text-decoration: none;
+      font-size: 0.9rem;
+      border-bottom: 1px solid transparent;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    .nav-links a:hover {
+      color: #cc0000;
+      border-color: #cc0000;
+    }
+
+    .contenedor {
+      width: 100%;
+      max-width: 760px;
+    }
+
+    .resumen {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .resumen-item {
+      background: #1a1a1a;
+      border: 2px solid #2a2a2a;
+      border-radius: 14px;
+      padding: 1.2rem;
+      text-align: center;
+    }
+
+    .resumen-item .numero {
+      font-size: 1.8rem;
+      font-weight: 800;
+    }
+
+    .resumen-item .etiqueta {
+      font-size: 0.78rem;
+      color: #888;
+      margin-top: 0.3rem;
+      letter-spacing: 0.5px;
+    }
+
+    .resumen-item.total .numero { color: #ccc; }
+    .resumen-item.pagados .numero { color: #4cdf7a; }
+    .resumen-item.pendientes .numero { color: #df4c4c; }
+
+    .barra-busqueda {
+      margin-bottom: 1.2rem;
+    }
+
+    .barra-busqueda input {
+      width: 100%;
+      padding: 0.9rem 1.1rem;
+      font-size: 1rem;
+      border: 2px solid #333;
+      border-radius: 10px;
+      background: #1a1a1a;
+      color: white;
+      outline: none;
+      transition: border-color 0.2s;
+      font-family: inherit;
+    }
+
+    .barra-busqueda input:focus {
+      border-color: #cc0000;
+    }
+
+    .tabla-wrapper {
+      background: #1a1a1a;
+      border: 2px solid #2a2a2a;
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead {
+      background: #111;
+    }
+
+    th {
+      text-align: left;
+      padding: 0.9rem 1.1rem;
+      font-size: 0.78rem;
+      color: #888;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    td {
+      padding: 0.9rem 1.1rem;
+      font-size: 0.9rem;
+      border-top: 1px solid #2a2a2a;
+    }
+
+    tbody tr:hover {
+      background: #1f1f1f;
+    }
+
+    .col-nombre { font-weight: 600; }
+    .col-dni { color: #888; font-size: 0.85rem; }
+
+    .badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      display: inline-block;
+      white-space: nowrap;
+    }
+
+    .badge-pagado {
+      background: #0d2e1a;
+      color: #4cdf7a;
+      border: 1px solid #1a7a3a;
+    }
+
+    .badge-pendiente {
+      background: #2e0d0d;
+      color: #df4c4c;
+      border: 1px solid #7a1a1a;
+    }
+
+    .badge-sin-modulo {
+      background: #1a1a2e;
+      color: #8a8adf;
+      border: 1px solid #3a3a7a;
+    }
+
+    .badge-sin-membresia {
+      background: #2a2a2a;
+      color: #999;
+      border: 1px solid #444;
+    }
+
+    .vacio {
+      color: #666;
+      font-size: 0.9rem;
+      text-align: center;
+      padding: 2.5rem 1rem;
+    }
+
+    .aviso-modulo {
+      background: rgba(138,138,223,0.1);
+      border: 1px solid #3a3a7a;
+      border-radius: 10px;
+      padding: 0.9rem 1.1rem;
+      font-size: 0.85rem;
+      color: #8a8adf;
+      margin-bottom: 1.2rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="logo-area">
+    <img src="leon.webp" alt="Lion Gym">
+    <div class="logo-texto">LION GYM</div>
+    <div class="subtitulo">PARANÁ — PANEL GENERAL</div>
+    <div class="nav-links">
+      <a href="alta-socio.html">+ Alta de socio</a>
+      <a href="editar-socio.html">Editar socio</a>
+      <a href="registro-pagos.html">Registrar pago</a>
+      <a href="recepcion.html">Recepción</a>
+      <a href="index.html">Inicio</a>
+      <a href="#" onclick="cerrarSesion(); return false;">Cerrar sesión</a>
+    </div>
+  </div>
+
+  <div class="contenedor">
+
+    <div class="resumen">
+      <div class="resumen-item total">
+        <div class="numero" id="totalSocios">—</div>
+        <div class="etiqueta">SOCIOS ACTIVOS</div>
+      </div>
+      <div class="resumen-item pagados">
+        <div class="numero" id="totalPagados">—</div>
+        <div class="etiqueta">AL DÍA ESTE MES</div>
+      </div>
+      <div class="resumen-item pendientes">
+        <div class="numero" id="totalPendientes">—</div>
+        <div class="etiqueta">PENDIENTES</div>
+      </div>
+    </div>
+
+    <div class="aviso-modulo" id="avisoModulo" style="display:none;">
+      El control de cuotas todavía está desactivado en recepción (MODULO_PAGOS_ACTIVO = false). Este panel ya calcula el estado real de cada socio para que puedas hacer seguimiento, aunque recepción todavía no lo muestre a los socios.
+    </div>
+
+    <div class="barra-busqueda">
+      <input type="text" id="inputBusqueda" placeholder="Buscar por nombre o DNI..." oninput="filtrarTabla()">
+    </div>
+
+    <div class="tabla-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>DNI</th>
+            <th>Plan</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody id="cuerpoTabla">
+          <tr><td colspan="4" class="vacio">Cargando socios...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://hlhsrbstxxdanyckujem.supabase.co'
+    const SUPABASE_KEY = 'sb_publishable_NOA6FfVrGTtkX0eu_rvyZA_Uyye2XRl'
+    const { createClient } = supabase
+    const db = createClient(SUPABASE_URL, SUPABASE_KEY)
+
+    // Mismo flag que recepcion.html — cuando se active allá, cambiar acá también
+    // (es solo informativo en este panel, el cálculo de estado siempre se muestra)
+    const MODULO_PAGOS_ACTIVO_EN_RECEPCION = false
+
+    // Protección de acceso: solo administradores logueados
+    async function verificarAcceso() {
+      const { data } = await db.auth.getSession()
+      if (!data.session) {
+        window.location.href = 'login.html'
+        return
+      }
+      const { data: admin } = await db
+        .from('administradores')
+        .select('nombre')
+        .eq('id', data.session.user.id)
+        .eq('activo', true)
+        .limit(1)
+
+      if (!admin || admin.length === 0) {
+        await db.auth.signOut()
+        window.location.href = 'login.html'
+      }
+    }
+    verificarAcceso()
+
+    async function cerrarSesion() {
+      await db.auth.signOut()
+      window.location.href = 'login.html'
+    }
+
+    if (!MODULO_PAGOS_ACTIVO_EN_RECEPCION) {
+      document.getElementById('avisoModulo').style.display = 'block'
+    }
+
+    let filasCompletas = []
+
+    async function cargarPanel() {
+      const ahora = new Date()
+      const anioActual = ahora.getFullYear()
+      const mesActual = ahora.getMonth() + 1
+
+      const { data: socios, error } = await db
+        .from('socios')
+        .select('*, membresias(*, planes(*))')
+        .eq('activo', true)
+        .order('nombre', { ascending: true })
+
+      if (error || !socios) {
+        document.getElementById('cuerpoTabla').innerHTML = '<tr><td colspan="4" class="vacio">Error al cargar los socios.</td></tr>'
+        return
+      }
+
+      const { data: pagosDelMes } = await db
+        .from('pagos')
+        .select('socio_id')
+        .eq('anio', anioActual)
+        .eq('mes', mesActual)
+
+      const dniConPago = new Set((pagosDelMes || []).map(p => p.socio_id))
+
+      filasCompletas = socios.map(s => {
+        const membresiasActivas = (s.membresias || []).filter(m => m.estado === 'activa')
+        const membresia = membresiasActivas.length > 0 ? membresiasActivas[0] : null
+
+        let estado = 'sin-membresia'
+        let textoEstado = 'Sin membresía'
+
+        if (membresia) {
+          estado = dniConPago.has(s.id) ? 'pagado' : 'pendiente'
+          textoEstado = dniConPago.has(s.id) ? `${mesNombre(mesActual)} pagado` : `${mesNombre(mesActual)} pendiente`
+        }
+
+        return {
+          nombre: s.nombre,
+          dni: s.dni,
+          plan: membresia ? membresia.planes.nombre : '—',
+          estado,
+          textoEstado
+        }
+      })
+
+      renderizarTabla(filasCompletas)
+      actualizarResumen(filasCompletas)
+    }
+
+    function mesNombre(mes) {
+      const nombres = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+      return nombres[mes]
+    }
+
+    function badgeClase(estado) {
+      if (estado === 'pagado') return 'badge-pagado'
+      if (estado === 'pendiente') return 'badge-pendiente'
+      return 'badge-sin-membresia'
+    }
+
+    function renderizarTabla(filas) {
+      const cuerpo = document.getElementById('cuerpoTabla')
+
+      if (filas.length === 0) {
+        cuerpo.innerHTML = '<tr><td colspan="4" class="vacio">No se encontraron socios.</td></tr>'
+        return
+      }
+
+      cuerpo.innerHTML = filas.map(f => `
+        <tr>
+          <td class="col-nombre">${f.nombre}</td>
+          <td class="col-dni">${f.dni}</td>
+          <td>${f.plan}</td>
+          <td><span class="badge ${badgeClase(f.estado)}">${f.textoEstado}</span></td>
+        </tr>
+      `).join('')
+    }
+
+    function actualizarResumen(filas) {
+      document.getElementById('totalSocios').textContent = filas.length
+      document.getElementById('totalPagados').textContent = filas.filter(f => f.estado === 'pagado').length
+      document.getElementById('totalPendientes').textContent = filas.filter(f => f.estado === 'pendiente').length
+    }
+
+    function filtrarTabla() {
+      const termino = document.getElementById('inputBusqueda').value.trim().toLowerCase()
+      if (!termino) {
+        renderizarTabla(filasCompletas)
+        return
+      }
+      const filtradas = filasCompletas.filter(f =>
+        f.nombre.toLowerCase().includes(termino) || f.dni.includes(termino)
+      )
+      renderizarTabla(filtradas)
+    }
+
+    cargarPanel()
+  </script>
+</body>
+</html>
