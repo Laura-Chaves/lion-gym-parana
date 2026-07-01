@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lion Gym Paraná — Gestión de Planes</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f0f0f;
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2.5rem 1rem 4rem;
+    }
+
+    .logo-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+
+    .logo-area img {
+      width: 90px;
+      height: 90px;
+      object-fit: contain;
+      margin-bottom: 0.6rem;
+      filter: drop-shadow(0 0 18px #cc0000aa);
+    }
+
+    .logo-texto {
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: #cc0000;
+      letter-spacing: 3px;
+    }
+
+    .subtitulo {
+      color: #666;
+      font-size: 0.85rem;
+      margin-top: 0.2rem;
+      letter-spacing: 1px;
+    }
+
+    .nav-links {
+      margin-top: 1rem;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1.5rem;
+    }
+
+    .nav-links a {
+      color: #888;
+      text-decoration: none;
+      font-size: 0.9rem;
+      border-bottom: 1px solid transparent;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    .nav-links a:hover {
+      color: #cc0000;
+      border-color: #cc0000;
+    }
+
+    .contenedor {
+      width: 100%;
+      max-width: 540px;
+    }
+
+    .tarjeta {
+      background: #1a1a1a;
+      border: 2px solid #2a2a2a;
+      border-radius: 16px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .tarjeta-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .tarjeta-header h2 {
+      font-size: 1.1rem;
+      color: #cc0000;
+      letter-spacing: 0.5px;
+    }
+
+    .btn-nuevo {
+      padding: 0.5rem 1rem;
+      font-size: 0.85rem;
+      font-weight: 700;
+      background: #cc0000;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-nuevo:hover { background: #aa0000; }
+
+    .plan-item {
+      border: 2px solid #2a2a2a;
+      border-radius: 12px;
+      padding: 1.1rem 1.2rem;
+      margin-bottom: 0.8rem;
+      transition: border-color 0.2s;
+    }
+
+    .plan-item:last-child { margin-bottom: 0; }
+
+    .plan-item.inactivo {
+      opacity: 0.5;
+    }
+
+    .plan-fila {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .plan-nombre {
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .plan-precio {
+      font-size: 1rem;
+      color: #4cdf7a;
+      font-weight: 700;
+    }
+
+    .plan-detalle {
+      font-size: 0.78rem;
+      color: #888;
+      margin-top: 0.3rem;
+    }
+
+    .plan-acciones {
+      display: flex;
+      gap: 0.6rem;
+      margin-top: 0.9rem;
+    }
+
+    .btn-accion {
+      padding: 0.4rem 0.9rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-editar {
+      background: #2a2a2a;
+      color: #ccc;
+    }
+
+    .btn-editar:hover { background: #333; }
+
+    .btn-desactivar {
+      background: #2e0d0d;
+      color: #df4c4c;
+    }
+
+    .btn-desactivar:hover { background: #3a1010; }
+
+    .btn-activar {
+      background: #0d2e1a;
+      color: #4cdf7a;
+    }
+
+    .btn-activar:hover { background: #0f3a20; }
+
+    /* Modal */
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .overlay.visible {
+      display: flex;
+    }
+
+    .modal {
+      background: #1a1a1a;
+      border: 2px solid #cc0000;
+      border-radius: 16px;
+      padding: 2rem;
+      width: 100%;
+      max-width: 400px;
+      margin: 1rem;
+    }
+
+    .modal h3 {
+      font-size: 1.1rem;
+      color: #cc0000;
+      margin-bottom: 1.5rem;
+    }
+
+    .campo {
+      margin-bottom: 1.1rem;
+    }
+
+    .campo label {
+      display: block;
+      font-size: 0.85rem;
+      color: #aaa;
+      margin-bottom: 0.4rem;
+    }
+
+    .campo input {
+      width: 100%;
+      padding: 0.85rem;
+      font-size: 1rem;
+      border: 2px solid #333;
+      border-radius: 8px;
+      background: #111;
+      color: white;
+      outline: none;
+      transition: border-color 0.2s;
+      font-family: inherit;
+    }
+
+    .campo input:focus { border-color: #cc0000; }
+
+    .modal-acciones {
+      display: flex;
+      gap: 0.8rem;
+      margin-top: 1.2rem;
+    }
+
+    .btn-guardar-modal {
+      flex: 1;
+      padding: 0.9rem;
+      font-size: 1rem;
+      font-weight: 700;
+      background: #cc0000;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-guardar-modal:hover { background: #aa0000; }
+    .btn-guardar-modal:disabled { background: #555; cursor: not-allowed; }
+
+    .btn-cancelar-modal {
+      flex: 1;
+      padding: 0.9rem;
+      font-size: 1rem;
+      font-weight: 700;
+      background: #2a2a2a;
+      color: #ccc;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-cancelar-modal:hover { background: #333; }
+
+    .mensaje {
+      margin-top: 1rem;
+      padding: 0.9rem 1rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      display: none;
+      line-height: 1.5;
+    }
+
+    .mensaje.exito {
+      background: #0d2e1a;
+      border: 1px solid #1a7a3a;
+      color: #4cdf7a;
+    }
+
+    .mensaje.error {
+      background: #2e0d0d;
+      border: 1px solid #7a1a1a;
+      color: #df4c4c;
+    }
+
+    .vacio {
+      color: #666;
+      font-size: 0.9rem;
+      text-align: center;
+      padding: 1.5rem 0;
+    }
+
+    .badge-inactivo {
+      font-size: 0.72rem;
+      background: #2a2a2a;
+      color: #888;
+      border: 1px solid #444;
+      padding: 0.15rem 0.5rem;
+      border-radius: 5px;
+      margin-left: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="logo-area">
+    <img src="leon.webp" alt="Lion Gym">
+    <div class="logo-texto">LION GYM</div>
+    <div class="subtitulo">PARANÁ — GESTIÓN DE PLANES</div>
+    <div class="nav-links">
+      <a href="panel-general.html">Panel general</a>
+      <a href="alta-socio.html">+ Alta de socio</a>
+      <a href="registro-pagos.html">Registrar pago</a>
+      <a href="index.html">Inicio</a>
+      <a href="#" onclick="cerrarSesion(); return false;">Cerrar sesión</a>
+    </div>
+  </div>
+
+  <div class="contenedor">
+    <div class="tarjeta">
+      <div class="tarjeta-header">
+        <h2>PLANES ACTIVOS</h2>
+        <button class="btn-nuevo" onclick="abrirModalNuevo()">+ Nuevo plan</button>
+      </div>
+      <div id="listaPlanesActivos"><div class="vacio">Cargando...</div></div>
+    </div>
+
+    <div class="tarjeta" id="tarjetaInactivos" style="display:none;">
+      <div class="tarjeta-header">
+        <h2 style="color:#666;">PLANES INACTIVOS</h2>
+      </div>
+      <div id="listaPlanesInactivos"></div>
+    </div>
+
+    <div class="mensaje" id="mensajeGlobal"></div>
+  </div>
+
+  <!-- Modal para crear/editar plan -->
+  <div class="overlay" id="overlay">
+    <div class="modal">
+      <h3 id="modalTitulo">Nuevo plan</h3>
+      <div class="campo">
+        <label>Nombre del plan</label>
+        <input type="text" id="modalNombre" placeholder="Plan Libre, Plan 3 días...">
+      </div>
+      <div class="campo">
+        <label>Precio mensual</label>
+        <input type="number" id="modalPrecio" placeholder="41000" step="0.01">
+      </div>
+      <div class="campo">
+        <label>Día límite de pago</label>
+        <input type="number" id="modalDiaVencimiento" value="10" min="1" max="28">
+      </div>
+      <div class="campo">
+        <label>% de recargo si se pasa del límite</label>
+        <input type="number" id="modalRecargo" value="15" min="0" max="100">
+      </div>
+      <div class="modal-acciones">
+        <button class="btn-cancelar-modal" onclick="cerrarModal()">Cancelar</button>
+        <button class="btn-guardar-modal" id="btnGuardarModal" onclick="guardarPlan()">Guardar</button>
+      </div>
+      <div class="mensaje" id="mensajeModal"></div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://hlhsrbstxxdanyckujem.supabase.co'
+    const SUPABASE_KEY = 'sb_publishable_NOA6FfVrGTtkX0eu_rvyZA_Uyye2XRl'
+    const { createClient } = supabase
+    const db = createClient(SUPABASE_URL, SUPABASE_KEY)
+
+    // Protección de acceso
+    async function verificarAcceso() {
+      const { data } = await db.auth.getSession()
+      if (!data.session) { window.location.href = 'login.html'; return }
+      const { data: admin } = await db
+        .from('administradores')
+        .select('nombre')
+        .eq('id', data.session.user.id)
+        .eq('activo', true)
+        .limit(1)
+      if (!admin || admin.length === 0) {
+        await db.auth.signOut()
+        window.location.href = 'login.html'
+      }
+    }
+    verificarAcceso()
+
+    async function cerrarSesion() {
+      await db.auth.signOut()
+      window.location.href = 'login.html'
+    }
+
+    let planEditandoId = null
+
+    function formatearPrecio(precio) {
+      return Number(precio).toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })
+    }
+
+    function mostrarMensaje(elementoId, texto, tipo) {
+      const el = document.getElementById(elementoId)
+      el.className = `mensaje ${tipo}`
+      el.textContent = texto
+      el.style.display = 'block'
+      setTimeout(() => { el.style.display = 'none' }, 4000)
+    }
+
+    async function cargarPlanes() {
+      const { data: planes, error } = await db
+        .from('planes')
+        .select('*')
+        .order('precio', { ascending: true })
+
+      if (error || !planes) {
+        document.getElementById('listaPlanesActivos').innerHTML = '<div class="vacio">Error al cargar los planes.</div>'
+        return
+      }
+
+      const activos = planes.filter(p => p.activo)
+      const inactivos = planes.filter(p => !p.activo)
+
+      renderizarPlanes(activos, 'listaPlanesActivos', true)
+
+      if (inactivos.length > 0) {
+        renderizarPlanes(inactivos, 'listaPlanesInactivos', false)
+        document.getElementById('tarjetaInactivos').style.display = 'block'
+      } else {
+        document.getElementById('tarjetaInactivos').style.display = 'none'
+      }
+    }
+
+    function renderizarPlanes(planes, contenedorId, activos) {
+      const contenedor = document.getElementById(contenedorId)
+
+      if (planes.length === 0) {
+        contenedor.innerHTML = '<div class="vacio">No hay planes.</div>'
+        return
+      }
+
+      contenedor.innerHTML = planes.map(p => `
+        <div class="plan-item ${activos ? '' : 'inactivo'}">
+          <div class="plan-fila">
+            <div>
+              <span class="plan-nombre">${p.nombre}</span>
+              ${!activos ? '<span class="badge-inactivo">inactivo</span>' : ''}
+              <div class="plan-detalle">
+                Vence día ${p.dia_vencimiento} · Recargo ${p.porcentaje_recargo}%
+              </div>
+            </div>
+            <div class="plan-precio">${formatearPrecio(p.precio)}</div>
+          </div>
+          <div class="plan-acciones">
+            ${activos
+              ? `<button class="btn-accion btn-editar" onclick="abrirModalEditar('${p.id}', '${p.nombre}', ${p.precio}, ${p.dia_vencimiento}, ${p.porcentaje_recargo})">Editar precio</button>
+                 <button class="btn-accion btn-desactivar" onclick="toggleActivo('${p.id}', false)">Desactivar</button>`
+              : `<button class="btn-accion btn-activar" onclick="toggleActivo('${p.id}', true)">Reactivar</button>`
+            }
+          </div>
+        </div>
+      `).join('')
+    }
+
+    function abrirModalNuevo() {
+      planEditandoId = null
+      document.getElementById('modalTitulo').textContent = 'Nuevo plan'
+      document.getElementById('modalNombre').value = ''
+      document.getElementById('modalPrecio').value = ''
+      document.getElementById('modalDiaVencimiento').value = '10'
+      document.getElementById('modalRecargo').value = '15'
+      document.getElementById('modalNombre').disabled = false
+      document.getElementById('mensajeModal').style.display = 'none'
+      document.getElementById('overlay').classList.add('visible')
+      document.getElementById('modalNombre').focus()
+    }
+
+    function abrirModalEditar(id, nombre, precio, diaVencimiento, recargo) {
+      planEditandoId = id
+      document.getElementById('modalTitulo').textContent = 'Editar plan'
+      document.getElementById('modalNombre').value = nombre
+      document.getElementById('modalPrecio').value = precio
+      document.getElementById('modalDiaVencimiento').value = diaVencimiento
+      document.getElementById('modalRecargo').value = recargo
+      document.getElementById('modalNombre').disabled = false
+      document.getElementById('mensajeModal').style.display = 'none'
+      document.getElementById('overlay').classList.add('visible')
+      document.getElementById('modalPrecio').focus()
+    }
+
+    function cerrarModal() {
+      document.getElementById('overlay').classList.remove('visible')
+      planEditandoId = null
+    }
+
+    async function guardarPlan() {
+      const nombre = document.getElementById('modalNombre').value.trim()
+      const precio = parseFloat(document.getElementById('modalPrecio').value)
+      const diaVencimiento = parseInt(document.getElementById('modalDiaVencimiento').value)
+      const recargo = parseFloat(document.getElementById('modalRecargo').value)
+
+      if (!nombre || !precio || precio <= 0) {
+        mostrarMensaje('mensajeModal', 'Completá el nombre y un precio válido.', 'error')
+        return
+      }
+
+      const btn = document.getElementById('btnGuardarModal')
+      btn.disabled = true
+      btn.textContent = 'Guardando...'
+
+      let error
+
+      if (planEditandoId) {
+        // Editar plan existente
+        const res = await db
+          .from('planes')
+          .update({ nombre, precio, dia_vencimiento: diaVencimiento, porcentaje_recargo: recargo })
+          .eq('id', planEditandoId)
+        error = res.error
+      } else {
+        // Crear plan nuevo
+        const res = await db
+          .from('planes')
+          .insert({ nombre, precio, dia_vencimiento: diaVencimiento, porcentaje_recargo: recargo, activo: true })
+        error = res.error
+      }
+
+      btn.disabled = false
+      btn.textContent = 'Guardar'
+
+      if (error) {
+        mostrarMensaje('mensajeModal', 'Error al guardar: ' + error.message, 'error')
+        return
+      }
+
+      cerrarModal()
+      mostrarMensaje('mensajeGlobal', planEditandoId ? 'Plan actualizado correctamente.' : 'Plan creado correctamente.', 'exito')
+      await cargarPlanes()
+    }
+
+    async function toggleActivo(id, nuevoEstado) {
+      const confirmMsg = nuevoEstado
+        ? '¿Reactivar este plan? Volvéras a poder asignárselo a nuevos socios.'
+        : '¿Desactivar este plan? Los socios que ya lo tienen quedan igual, pero no se podrá asignar a nuevos socios.'
+
+      if (!confirm(confirmMsg)) return
+
+      const { error } = await db
+        .from('planes')
+        .update({ activo: nuevoEstado })
+        .eq('id', id)
+
+      if (error) {
+        mostrarMensaje('mensajeGlobal', 'Error al actualizar el plan: ' + error.message, 'error')
+        return
+      }
+
+      mostrarMensaje('mensajeGlobal', nuevoEstado ? 'Plan reactivado.' : 'Plan desactivado.', 'exito')
+      await cargarPlanes()
+    }
+
+    // Cerrar modal clickeando afuera
+    document.getElementById('overlay').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('overlay')) cerrarModal()
+    })
+
+    cargarPlanes()
+  </script>
+</body>
+</html>
