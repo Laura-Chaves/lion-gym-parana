@@ -119,6 +119,12 @@
       border-color: #cc0000;
     }
 
+    .campo .ayuda {
+      font-size: 0.78rem;
+      color: #777;
+      margin-top: 0.35rem;
+    }
+
     .fila-doble {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -231,8 +237,8 @@
 
         <div class="fila-doble">
           <div class="campo">
-            <label>DNI</label>
-            <input type="text" id="dni" disabled style="opacity:0.6;">
+            <label>DNI <span class="obligatorio">*</span></label>
+            <input type="text" id="dni" required inputmode="numeric">
           </div>
           <div class="campo">
             <label>Teléfono</label>
@@ -268,7 +274,7 @@
         </div>
 
         <div class="aviso-cambio-plan" id="avisoCambioPlan">
-          ⚠️ Vas a cambiar el plan. Se cerrará la membresía actual y se creará una nueva a partir de hoy. El historial de pagos anteriores no se modifica.
+          Vas a cambiar el plan. Se cerrará la membresía actual y se creará una nueva a partir de hoy. El historial de pagos anteriores no se modifica.
         </div>
 
         <button type="submit" class="btn-guardar" id="btnGuardar">GUARDAR CAMBIOS</button>
@@ -402,6 +408,7 @@
       document.getElementById('mensajeEdicion').style.display = 'none'
 
       const nombre = document.getElementById('nombre').value.trim()
+      const dni = document.getElementById('dni').value.trim()
       const telefono = document.getElementById('telefono').value.trim()
       const email = document.getElementById('email').value.trim()
       const fecha_nacimiento = document.getElementById('fecha_nacimiento').value || null
@@ -413,14 +420,39 @@
         return
       }
 
+      if (!dni) {
+        mostrarMensaje('mensajeEdicion', 'El DNI es obligatorio.', 'error')
+        return
+      }
+
       const btn = document.getElementById('btnGuardar')
       btn.disabled = true
       btn.textContent = 'GUARDANDO...'
 
+      // Si el DNI cambió respecto al que tenía cargado, verificar que no
+      // pertenezca ya a otro socio antes de guardar nada.
+      const dniCambio = dni !== String(socioActual.dni)
+
+      if (dniCambio) {
+        const { data: dniExistente } = await db
+          .from('socios')
+          .select('id')
+          .eq('dni', dni)
+          .neq('id', socioActual.id)
+          .limit(1)
+
+        if (dniExistente && dniExistente.length > 0) {
+          mostrarMensaje('mensajeEdicion', 'Este DNI ya pertenece a otro socio registrado.', 'error')
+          btn.disabled = false
+          btn.textContent = 'GUARDAR CAMBIOS'
+          return
+        }
+      }
+
       // 1) Actualizar datos del socio
       const { error: errorSocio } = await db
         .from('socios')
-        .update({ nombre, telefono: telefono || null, email: email || null, fecha_nacimiento, activo })
+        .update({ nombre, dni, telefono: telefono || null, email: email || null, fecha_nacimiento, activo })
         .eq('id', socioActual.id)
 
       if (errorSocio) {
@@ -460,7 +492,11 @@
         }
       }
 
-      mostrarMensaje('mensajeEdicion', '✅ Cambios guardados correctamente.', 'exito')
+      // Actualizamos el DNI en memoria para que las próximas comparaciones
+      // de este mismo formulario (sin volver a buscar) sean correctas.
+      socioActual.dni = dni
+
+      mostrarMensaje('mensajeEdicion', 'Cambios guardados correctamente.', 'exito')
       btn.disabled = false
       btn.textContent = 'GUARDAR CAMBIOS'
 
