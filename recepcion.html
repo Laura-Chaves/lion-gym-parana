@@ -182,6 +182,15 @@
       font-size: 0.95rem;
     }
 
+    .resultado .dias-restantes {
+      margin-top: 0.6rem;
+      padding: 0.6rem 0.8rem;
+      background: rgba(255,255,255,0.05);
+      border-radius: 8px;
+      font-size: 0.9rem;
+      color: #ccc;
+    }
+
     .resultado .advertencia-doble {
       margin-top: 0.8rem;
       padding: 0.6rem 1rem;
@@ -243,9 +252,8 @@
     const { createClient } = supabase
     const db = createClient(SUPABASE_URL, SUPABASE_KEY)
 
-    // Mientras el módulo de pagos no esté activo, no mostramos "PENDIENTE" como alarma.
-    // Lo activamos recién cuando empecemos a cargar pagos reales (mes que viene).
-    const MODULO_PAGOS_ACTIVO = false
+    // Módulo de pagos activo: ahora sí controlamos cuotas.
+    const MODULO_PAGOS_ACTIVO = true
 
     function actualizarReloj() {
       const ahora = new Date()
@@ -289,31 +297,60 @@
       const membresia = membresias && membresias.length > 0 ? membresias[0] : null
 
       const ahora = new Date()
-      const anioActual = ahora.getFullYear()
-      const mesActual = ahora.getMonth() + 1
       const diaActual = ahora.getDate()
 
       let pagado = false
       let conRecargo = false
+      let sinPagosRegistrados = false
       let montoAPagar = 0
+      let diasRestantes = null
+      let diasVencido = null
+      let fechaVencimiento = null
+      let diaCorteRecargo = 10
 
       if (membresia && MODULO_PAGOS_ACTIVO) {
-        const { data: pagosDelMes } = await db
+        diaCorteRecargo = membresia.planes.dia_vencimiento || 10
+        const recargoPorcentaje = membresia.planes.porcentaje_recargo || 15
+        const precio = membresia.planes.precio
+
+        const { data: ultimosPagos } = await db
           .from('pagos')
           .select('*')
           .eq('socio_id', socio.id)
-          .eq('anio', anioActual)
-          .eq('mes', mesActual)
+          .order('fecha_pago', { ascending: false })
           .limit(1)
 
-        pagado = pagosDelMes && pagosDelMes.length > 0
+        const ultimoPago = ultimosPagos && ultimosPagos.length > 0 ? ultimosPagos[0] : null
 
-        if (!pagado) {
-          const precio = membresia.planes.precio
-          const diaVencimiento = membresia.planes.dia_vencimiento || 10
-          const recargo = membresia.planes.porcentaje_recargo || 15
-          conRecargo = diaActual > diaVencimiento
-          montoAPagar = conRecargo ? precio * (1 + recargo / 100) : precio
+        if (ultimoPago) {
+          const fechaPago = new Date(ultimoPago.fecha_pago)
+          fechaVencimiento = new Date(fechaPago)
+          fechaVencimiento.setMonth(fechaVencimiento.getMonth() + 1)
+
+          // Comparamos solo días completos, sin horas, para que el conteo sea exacto
+          const hoyMedianoche = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate())
+          const vencMedianoche = new Date(fechaVencimiento.getFullYear(), fechaVencimiento.getMonth(), fechaVencimiento.getDate())
+          const diffDias = Math.round((vencMedianoche - hoyMedianoche) / (1000 * 60 * 60 * 24))
+
+          if (diffDias >= 0) {
+            // Todavía dentro del mes que ya pagó: al día.
+            pagado = true
+            diasRestantes = diffDias
+          } else {
+            // Ya venció su fecha personal, pero el recargo depende del
+            // corte calendario (día 10 por defecto), no de esta fecha.
+            pagado = false
+            diasVencido = Math.abs(diffDias)
+            conRecargo = diaActual > diaCorteRecargo
+            montoAPagar = conRecargo ? precio * (1 + recargoPorcentaje / 100) : precio
+          }
+        } else {
+          // Nunca tuvo un pago registrado: no hay fecha personal de la cual
+          // partir, así que el recargo se rige directo por el corte calendario.
+          pagado = false
+          sinPagosRegistrados = true
+          conRecargo = diaActual > diaCorteRecargo
+          montoAPagar = conRecargo ? precio * (1 + recargoPorcentaje / 100) : precio
         }
       }
 
@@ -328,7 +365,7 @@
 
       await db.from('asistencia').insert({ socio_id: socio.id })
 
-      mostrarResultado(socio, membresia, pagado, conRecargo, montoAPagar, cantidadHoy)
+      mostrarResultado(socio, membresia, pagado, conRecargo, montoAPagar, cantidadHoy, diasRestantes, diasVencido, fechaVencimiento, sinPagosRegistrados, diaCorteRecargo)
 
       setTimeout(() => {
         document.getElementById('inputDNI').value = ''
@@ -337,16 +374,41 @@
       }, 50000)
     }
 
-    function mostrarResultado(socio, membresia, pagado, conRecargo, montoAPagar, ingresosHoy) {
+    function formatearFecha(fecha) {
+      return fecha.toLocaleDateString('es-AR', { day: 'numeric', month: 'long' })
+    }
+
+    function textoDiasRestantes(diasRestantes, fechaVencimiento) {
+      if (diasRestantes === null) return ''
+      const fechaTexto = formatearFecha(fechaVencimiento)
+
+      if (diasRestantes > 1) {
+        return `Te quedan <strong style="color:#fff">${diasRestantes} días</strong> para el próximo vencimiento (${fechaTexto})`
+      } else if (diasRestantes === 1) {
+        return `<strong style="color:#ffb84c">Te queda 1 día</strong> para el próximo vencimiento (${fechaTexto})`
+      }
+      return `<strong style="color:#ffb84c">Tu membresía vence hoy</strong> (${fechaTexto})`
+    }
+
+    function textoVencida(diasVencido, fechaVencimiento, conRecargo, diaCorteRecargo) {
+      const fechaTexto = formatearFecha(fechaVencimiento)
+      const base = diasVencido === 1
+        ? `Tu cuota <strong style="color:#df4c4c">venció ayer</strong> (vencía el ${fechaTexto})`
+        : `Tu cuota <strong style="color:#df4c4c">venció hace ${diasVencido} días</strong> (vencía el ${fechaTexto})`
+
+      if (conRecargo) return base
+      return `${base}. Tenés hasta el día ${diaCorteRecargo} del mes para pagar sin recargo`
+    }
+
+    function mostrarResultado(socio, membresia, pagado, conRecargo, montoAPagar, ingresosHoy, diasRestantes, diasVencido, fechaVencimiento, sinPagosRegistrados, diaCorteRecargo) {
       const resultado = document.getElementById('resultado')
-      const nombreMes = new Date().toLocaleString('es-AR', { month: 'long' })
 
       let html = ''
 
       if (!membresia) {
         resultado.className = 'resultado debe'
         html = `
-          <div class="estado">⛔ SIN MEMBRESÍA</div>
+          <div class="estado">SIN MEMBRESÍA</div>
           <div class="nombre">${socio.nombre}</div>
           <div class="info">No tiene una membresía activa.<br>Consultá en recepción.</div>
         `
@@ -354,42 +416,47 @@
         // Etapa de carga inicial: todavía no controlamos pagos, solo damos acceso.
         resultado.className = 'resultado neutral'
         html = `
-          <div class="estado">✅ ACCESO PERMITIDO</div>
+          <div class="estado">ACCESO PERMITIDO</div>
           <div class="nombre">${socio.nombre}</div>
           <div class="info">
             Plan: ${membresia.planes.nombre}<br>
             Control de cuotas: <strong style="color:#ccc">aún no activo</strong>
           </div>
-          ${ingresosHoy > 0 ? `<div class="advertencia-doble">⚠️ Ya registraste un ingreso hoy (${ingresosHoy} ${ingresosHoy === 1 ? 'vez' : 'veces'})</div>` : ''}
+          ${ingresosHoy > 0 ? `<div class="advertencia-doble">Ya registraste un ingreso hoy (${ingresosHoy} ${ingresosHoy === 1 ? 'vez' : 'veces'})</div>` : ''}
         `
       } else if (pagado) {
         resultado.className = 'resultado al-dia'
+        const diasHtml = textoDiasRestantes(diasRestantes, fechaVencimiento)
         html = `
-          <div class="estado">✅ ACCESO PERMITIDO</div>
+          <div class="estado">ACCESO PERMITIDO</div>
           <div class="nombre">${socio.nombre}</div>
           <div class="info">
             Plan: ${membresia.planes.nombre}<br>
-            Cuota de ${nombreMes}: <strong style="color:#4cdf7a">PAGADA</strong>
+            Cuota: <strong style="color:#4cdf7a">AL DÍA</strong>
           </div>
-          ${ingresosHoy > 0 ? `<div class="advertencia-doble">⚠️ Ya registraste un ingreso hoy (${ingresosHoy} ${ingresosHoy === 1 ? 'vez' : 'veces'})</div>` : ''}
+          <div class="dias-restantes">${diasHtml}</div>
+          ${ingresosHoy > 0 ? `<div class="advertencia-doble">Ya registraste un ingreso hoy (${ingresosHoy} ${ingresosHoy === 1 ? 'vez' : 'veces'})</div>` : ''}
         `
       } else {
         resultado.className = 'resultado debe'
         const montoFormateado = montoAPagar.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })
+        const vencidaHtml = diasVencido !== null ? textoVencida(diasVencido, fechaVencimiento, conRecargo, diaCorteRecargo) : ''
         html = `
-          <div class="estado">⚠️ CUOTA PENDIENTE</div>
+          <div class="estado">CUOTA PENDIENTE</div>
           <div class="nombre">${socio.nombre}</div>
           <div class="info">
             Plan: ${membresia.planes.nombre}<br>
-            Cuota de ${nombreMes}: <strong style="color:#df4c4c">NO PAGADA</strong>
+            Cuota: <strong style="color:#df4c4c">NO PAGADA</strong>
           </div>
           <div class="monto-recargo">
             ${conRecargo
-              ? `💸 Monto con recargo del 15%: <strong style="color:#cc0000">${montoFormateado}</strong>`
-              : `💰 Monto a pagar: <strong style="color:#fff">${montoFormateado}</strong> (hasta el día 10)`
+              ? `Monto con recargo del ${membresia.planes.porcentaje_recargo || 15}%: <strong style="color:#cc0000">${montoFormateado}</strong>`
+              : `Monto a pagar: <strong style="color:#fff">${montoFormateado}</strong>`
             }
           </div>
-          ${ingresosHoy > 0 ? `<div class="advertencia-doble">⚠️ Ya registraste un ingreso hoy (${ingresosHoy} ${ingresosHoy === 1 ? 'vez' : 'veces'})</div>` : ''}
+          ${vencidaHtml ? `<div class="dias-restantes" style="border-left:3px solid ${conRecargo ? '#cc0000' : '#333'}">${vencidaHtml}</div>` : ''}
+          ${sinPagosRegistrados ? `<div class="dias-restantes">No tiene pagos registrados todavía. Vence el día ${diaCorteRecargo} de cada mes.</div>` : ''}
+          ${ingresosHoy > 0 ? `<div class="advertencia-doble">Ya registraste un ingreso hoy (${ingresosHoy} ${ingresosHoy === 1 ? 'vez' : 'veces'})</div>` : ''}
         `
       }
 
@@ -401,7 +468,7 @@
       const resultado = document.getElementById('resultado')
       resultado.className = 'resultado no-encontrado'
       resultado.innerHTML = `
-        <div class="estado">❓ DNI NO ENCONTRADO</div>
+        <div class="estado">DNI NO ENCONTRADO</div>
         <div class="nombre">DNI: ${dni}</div>
         <div class="info">Este DNI no está registrado en el sistema.<br>Consultá en recepción para darte de alta.</div>
       `
