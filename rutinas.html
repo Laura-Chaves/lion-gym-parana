@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lion Gym Paraná — Rutinas</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f0f0f;
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2.5rem 1rem 4rem;
+    }
+
+    .logo-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+
+    .logo-area img {
+      width: 90px;
+      height: 90px;
+      object-fit: contain;
+      margin-bottom: 0.6rem;
+      filter: drop-shadow(0 0 18px #cc0000aa);
+    }
+
+    .logo-texto {
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: #cc0000;
+      letter-spacing: 3px;
+    }
+
+    .subtitulo {
+      color: #666;
+      font-size: 0.85rem;
+      margin-top: 0.2rem;
+      letter-spacing: 1px;
+    }
+
+    .nav-links {
+      margin-top: 1rem;
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .nav-links a {
+      color: #888;
+      text-decoration: none;
+      font-size: 0.9rem;
+      border-bottom: 1px solid transparent;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    .nav-links a:hover {
+      color: #cc0000;
+      border-color: #cc0000;
+    }
+
+    .contenedor {
+      width: 100%;
+      max-width: 640px;
+    }
+
+    .tarjeta {
+      background: #1a1a1a;
+      border: 2px solid #2a2a2a;
+      border-radius: 16px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .tarjeta h2 {
+      font-size: 1.1rem;
+      color: #cc0000;
+      margin-bottom: 1.2rem;
+      letter-spacing: 0.5px;
+    }
+
+    .campo {
+      margin-bottom: 1.1rem;
+    }
+
+    .campo label {
+      display: block;
+      font-size: 0.85rem;
+      color: #aaa;
+      margin-bottom: 0.4rem;
+    }
+
+    .campo .obligatorio { color: #cc0000; }
+
+    .campo input,
+    .campo select,
+    .campo textarea {
+      width: 100%;
+      padding: 0.85rem;
+      font-size: 1.05rem;
+      border: 2px solid #333;
+      border-radius: 8px;
+      background: #111;
+      color: white;
+      outline: none;
+      transition: border-color 0.2s;
+      font-family: inherit;
+    }
+
+    .campo input:focus,
+    .campo select:focus,
+    .campo textarea:focus {
+      border-color: #cc0000;
+    }
+
+    .fila-doble {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .fila-triple {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .tipo-plan-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.6rem;
+    }
+
+    .tipo-plan-opcion {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: #111;
+      border: 2px solid #333;
+      border-radius: 8px;
+      padding: 0.7rem 0.9rem;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .tipo-plan-opcion:has(input:checked) {
+      border-color: #cc0000;
+      background: rgba(204,0,0,0.08);
+    }
+
+    .tipo-plan-opcion input { width: auto; margin: 0; }
+
+    .btn-buscar, .btn-guardar, .btn-secundario {
+      width: 100%;
+      padding: 1rem;
+      font-size: 1.05rem;
+      font-weight: 700;
+      background: #cc0000;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-buscar:hover, .btn-guardar:hover { background: #aa0000; }
+    .btn-guardar:disabled {
+      background: #555;
+      cursor: not-allowed;
+    }
+
+    .btn-secundario {
+      background: transparent;
+      border: 2px solid #333;
+      color: #ccc;
+    }
+    .btn-secundario:hover { border-color: #cc0000; color: #cc0000; }
+
+    .mensaje {
+      margin-top: 1rem;
+      padding: 0.9rem 1rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      display: none;
+      line-height: 1.5;
+    }
+
+    .mensaje.exito {
+      background: #0d2e1a;
+      border: 1px solid #1a7a3a;
+      color: #4cdf7a;
+    }
+
+    .mensaje.error {
+      background: #2e0d0d;
+      border: 1px solid #7a1a1a;
+      color: #df4c4c;
+    }
+
+    .mensaje.info {
+      background: #1a1a2e;
+      border: 1px solid #3a3a7a;
+      color: #8a8adf;
+    }
+
+    .tarjeta-oculta { display: none; }
+
+    .historial-item {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid #2a2a2a;
+      border-radius: 8px;
+      padding: 0.8rem 1rem;
+      margin-bottom: 0.6rem;
+      font-size: 0.88rem;
+      color: #bbb;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .historial-item .badge-activa {
+      background: rgba(76,223,122,0.15);
+      color: #4cdf7a;
+      border-radius: 6px;
+      padding: 0.15rem 0.5rem;
+      font-size: 0.75rem;
+      white-space: nowrap;
+    }
+
+    .link-box {
+      background: #111;
+      border: 2px solid #333;
+      border-radius: 8px;
+      padding: 0.85rem 1rem;
+      font-size: 0.85rem;
+      color: #ccc;
+      word-break: break-all;
+      margin-bottom: 0.8rem;
+    }
+
+    .link-botones {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.7rem;
+    }
+
+    .link-botones a, .link-botones button {
+      text-align: center;
+      text-decoration: none;
+      display: block;
+    }
+
+    .dia-bloque {
+      border: 2px solid #2a2a2a;
+      border-radius: 12px;
+      padding: 1.2rem;
+      margin-bottom: 1.2rem;
+      background: rgba(255,255,255,0.02);
+    }
+
+    .dia-encabezado {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      gap: 0.7rem;
+    }
+
+    .dia-encabezado .campo { flex: 1; margin-bottom: 0; }
+
+    .btn-quitar-dia {
+      background: transparent;
+      border: 1px solid #7a1a1a;
+      color: #df4c4c;
+      border-radius: 8px;
+      padding: 0.6rem 0.8rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn-quitar-dia:hover { background: rgba(204,0,0,0.1); }
+
+    .ejercicio-fila {
+      display: grid;
+      grid-template-columns: 2fr 0.8fr 0.8fr 0.8fr auto;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+      align-items: center;
+    }
+
+    .ejercicio-fila input {
+      padding: 0.6rem;
+      font-size: 0.9rem;
+      border: 2px solid #333;
+      border-radius: 6px;
+      background: #111;
+      color: white;
+    }
+
+    .ejercicio-fila input:focus {
+      outline: none;
+      border-color: #cc0000;
+    }
+
+    .btn-quitar-ejercicio {
+      background: transparent;
+      border: none;
+      color: #666;
+      font-size: 1.3rem;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0.3rem;
+    }
+    .btn-quitar-ejercicio:hover { color: #df4c4c; }
+
+    .btn-agregar-ejercicio {
+      background: transparent;
+      border: 1px dashed #444;
+      color: #999;
+      border-radius: 8px;
+      padding: 0.55rem;
+      width: 100%;
+      cursor: pointer;
+      font-size: 0.85rem;
+      margin-top: 0.3rem;
+    }
+    .btn-agregar-ejercicio:hover { border-color: #cc0000; color: #cc0000; }
+
+    .encabezados-ejercicio {
+      display: grid;
+      grid-template-columns: 2fr 0.8fr 0.8fr 0.8fr auto;
+      gap: 0.5rem;
+      font-size: 0.72rem;
+      color: #777;
+      margin-bottom: 0.4rem;
+      padding: 0 0.1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .btn-agregar-dia {
+      background: transparent;
+      border: 2px dashed #333;
+      color: #999;
+      border-radius: 10px;
+      padding: 0.9rem;
+      width: 100%;
+      cursor: pointer;
+      font-size: 0.95rem;
+      margin-bottom: 1.5rem;
+    }
+    .btn-agregar-dia:hover { border-color: #cc0000; color: #cc0000; }
+
+    @media (max-width: 560px) {
+      .ejercicio-fila { grid-template-columns: 1fr 1fr; }
+      .encabezados-ejercicio { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="logo-area">
+    <img src="leon.webp" alt="Lion Gym">
+    <div class="logo-texto">LION GYM</div>
+    <div class="subtitulo">PARANÁ — RUTINAS</div>
+    <div class="nav-links">
+      <a href="alta-socio.html">+ Alta de socio</a>
+      <a href="editar-socio.html">Editar socio</a>
+      <a href="panel-general.html">Panel general</a>
+      <a href="#" onclick="cerrarSesion(); return false;">Cerrar sesión</a>
+    </div>
+  </div>
+
+  <div class="contenedor">
+
+    <div class="tarjeta">
+      <h2>BUSCAR SOCIO</h2>
+      <div class="campo">
+        <label>DNI</label>
+        <input type="number" id="inputDNI" placeholder="12345678" autofocus
+          onkeydown="if(event.key==='Enter') buscarSocio()">
+      </div>
+      <button class="btn-buscar" onclick="buscarSocio()">BUSCAR</button>
+      <div class="mensaje" id="mensajeBusqueda"></div>
+    </div>
+
+    <div class="tarjeta tarjeta-oculta" id="tarjetaLink">
+      <h2>LINK PARA EL SOCIO</h2>
+      <div class="campo" style="margin-bottom:0.8rem; color:#999; font-size:0.85rem;">
+        Este link es siempre el mismo para este socio. Cuando le cargues una rutina nueva, el mismo link va a mostrar la actualizada.
+      </div>
+      <div class="link-box" id="linkTexto"></div>
+      <div class="link-botones">
+        <button class="btn-secundario" onclick="copiarLink()">COPIAR LINK</button>
+        <a class="btn-buscar" id="linkWhatsapp" target="_blank">ENVIAR POR WHATSAPP</a>
+      </div>
+    </div>
+
+    <div class="tarjeta tarjeta-oculta" id="tarjetaHistorial">
+      <h2>RUTINAS ANTERIORES</h2>
+      <div id="listaHistorial"></div>
+    </div>
+
+    <div class="tarjeta tarjeta-oculta" id="tarjetaNueva">
+      <h2>NUEVA RUTINA</h2>
+      <form id="formRutina">
+        <div class="campo">
+          <label>Nombre de la rutina <span class="obligatorio">*</span></label>
+          <input type="text" id="nombreRutina" placeholder="Ej: Rutina de Fuerza — Agosto" required>
+        </div>
+
+        <div class="campo">
+          <label>Tipo de plan <span class="obligatorio">*</span></label>
+          <div class="tipo-plan-grid">
+            <label class="tipo-plan-opcion"><input type="radio" name="tipoPlan" value="Fuerza" checked> Fuerza</label>
+            <label class="tipo-plan-opcion"><input type="radio" name="tipoPlan" value="Hipertrofia"> Hipertrofia</label>
+            <label class="tipo-plan-opcion"><input type="radio" name="tipoPlan" value="Potencia"> Potencia</label>
+            <label class="tipo-plan-opcion"><input type="radio" name="tipoPlan" value="Resistencia"> Resistencia</label>
+            <label class="tipo-plan-opcion"><input type="radio" name="tipoPlan" value="Recomposición"> Recomposición</label>
+            <label class="tipo-plan-opcion"><input type="radio" name="tipoPlan" value="Otro"> Otro</label>
+          </div>
+        </div>
+
+        <div class="fila-triple">
+          <div class="campo">
+            <label>Fecha de inicio</label>
+            <input type="date" id="fechaInicio" required>
+          </div>
+          <div class="campo">
+            <label>Peso actual (kg)</label>
+            <input type="number" step="0.1" id="pesoActual" placeholder="Ej: 78.5">
+          </div>
+          <div class="campo">
+            <label>Entrenador</label>
+            <input type="text" id="entrenador" placeholder="Nombre del entrenador">
+          </div>
+        </div>
+
+        <div class="campo">
+          <label>Objetivo</label>
+          <textarea id="objetivo" rows="2" placeholder="Ej: Ganar masa muscular en tren superior"></textarea>
+        </div>
+
+        <h2 style="margin-top:1.8rem;">DÍAS Y EJERCICIOS</h2>
+        <div id="contenedorDias"></div>
+        <button type="button" class="btn-agregar-dia" onclick="agregarDia()">+ AGREGAR DÍA</button>
+
+        <button type="submit" class="btn-guardar" id="btnGuardarRutina">GUARDAR RUTINA</button>
+        <div class="mensaje" id="mensajeRutina"></div>
+      </form>
+    </div>
+
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://hlhsrbstxxdanyckujem.supabase.co'
+    const SUPABASE_KEY = 'sb_publishable_NOA6FfVrGTtkX0eu_rvyZA_Uyye2XRl'
+    const { createClient } = supabase
+    const db = createClient(SUPABASE_URL, SUPABASE_KEY)
+
+    let socioActual = null
+    let contadorDias = 0
+
+    async function verificarAcceso() {
+      const { data } = await db.auth.getSession()
+      if (!data.session) {
+        window.location.href = 'login.html'
+        return
+      }
+      const { data: admin } = await db
+        .from('administradores')
+        .select('nombre')
+        .eq('id', data.session.user.id)
+        .eq('activo', true)
+        .limit(1)
+
+      if (!admin || admin.length === 0) {
+        await db.auth.signOut()
+        window.location.href = 'login.html'
+        return
+      }
+
+      // Autocompletamos el nombre del entrenador con el admin logueado (editable)
+      if (admin[0].nombre) {
+        document.getElementById('entrenador').value = admin[0].nombre
+      }
+    }
+    verificarAcceso()
+
+    async function cerrarSesion() {
+      await db.auth.signOut()
+      window.location.href = 'login.html'
+    }
+
+    function mostrarMensaje(elementoId, texto, tipo) {
+      const el = document.getElementById(elementoId)
+      el.className = `mensaje ${tipo}`
+      el.textContent = texto
+      el.style.display = 'block'
+    }
+
+    async function buscarSocio() {
+      const dni = document.getElementById('inputDNI').value.trim()
+      document.getElementById('mensajeBusqueda').style.display = 'none'
+      document.getElementById('tarjetaLink').classList.add('tarjeta-oculta')
+      document.getElementById('tarjetaHistorial').classList.add('tarjeta-oculta')
+      document.getElementById('tarjetaNueva').classList.add('tarjeta-oculta')
+
+      if (!dni) return
+
+      const { data: socios, error } = await db
+        .from('socios')
+        .select('*')
+        .eq('dni', dni)
+        .limit(1)
+
+      if (error || !socios || socios.length === 0) {
+        mostrarMensaje('mensajeBusqueda', 'No se encontró ningún socio con ese DNI.', 'error')
+        return
+      }
+
+      socioActual = socios[0]
+
+      mostrarLink()
+      await cargarHistorial()
+      prepararFormularioNuevo()
+
+      document.getElementById('tarjetaLink').classList.remove('tarjeta-oculta')
+      document.getElementById('tarjetaHistorial').classList.remove('tarjeta-oculta')
+      document.getElementById('tarjetaNueva').classList.remove('tarjeta-oculta')
+    }
+
+    function mostrarLink() {
+      const base = window.location.origin + window.location.pathname.replace('rutinas.html', '')
+      const link = `${base}ver-rutina.html?socio=${socioActual.id}`
+      document.getElementById('linkTexto').textContent = link
+
+      const mensajeWpp = encodeURIComponent(`Hola ${socioActual.nombre}! Te paso el link de tu rutina de entrenamiento: ${link}`)
+      document.getElementById('linkWhatsapp').href = `https://wa.me/?text=${mensajeWpp}`
+    }
+
+    function copiarLink() {
+      const texto = document.getElementById('linkTexto').textContent
+      navigator.clipboard.writeText(texto).then(() => {
+        mostrarMensaje('mensajeBusqueda', '', 'info')
+        document.getElementById('mensajeBusqueda').style.display = 'none'
+      })
+    }
+
+    async function cargarHistorial() {
+      const { data: rutinas } = await db
+        .from('rutinas')
+        .select('*')
+        .eq('socio_id', socioActual.id)
+        .order('created_at', { ascending: false })
+
+      const lista = document.getElementById('listaHistorial')
+
+      if (!rutinas || rutinas.length === 0) {
+        lista.innerHTML = '<div style="color:#777; font-size:0.88rem;">Este socio todavía no tiene rutinas cargadas.</div>'
+        return
+      }
+
+      lista.innerHTML = rutinas.map(r => {
+        const fecha = r.fecha_inicio ? new Date(r.fecha_inicio + 'T00:00:00').toLocaleDateString('es-AR') : '—'
+        return `
+          <div class="historial-item">
+            <span>${r.nombre} — ${r.tipo_plan} (desde ${fecha})</span>
+            ${r.activa ? '<span class="badge-activa">VIGENTE</span>' : ''}
+          </div>
+        `
+      }).join('')
+    }
+
+    function prepararFormularioNuevo() {
+      document.getElementById('formRutina').reset()
+      document.getElementById('mensajeRutina').style.display = 'none'
+      document.getElementById('fechaInicio').value = new Date().toISOString().split('T')[0]
+      document.getElementById('contenedorDias').innerHTML = ''
+      contadorDias = 0
+      agregarDia()
+    }
+
+    function agregarDia() {
+      contadorDias++
+      const idDia = contadorDias
+      const contenedor = document.getElementById('contenedorDias')
+
+      const bloque = document.createElement('div')
+      bloque.className = 'dia-bloque'
+      bloque.id = `dia-${idDia}`
+      bloque.innerHTML = `
+        <div class="dia-encabezado">
+          <div class="campo">
+            <label>Nombre del día</label>
+            <input type="text" class="nombre-dia" value="Día ${contenedor.children.length + 1}" placeholder="Ej: Día 1 — Pecho y tríceps">
+          </div>
+          <button type="button" class="btn-quitar-dia" onclick="quitarDia(${idDia})">QUITAR DÍA</button>
+        </div>
+        <div class="encabezados-ejercicio">
+          <span>Ejercicio</span><span>Series</span><span>Reps</span><span>Peso (kg)</span><span></span>
+        </div>
+        <div class="lista-ejercicios" id="ejercicios-${idDia}"></div>
+        <button type="button" class="btn-agregar-ejercicio" onclick="agregarEjercicio(${idDia})">+ Agregar ejercicio</button>
+      `
+      contenedor.appendChild(bloque)
+
+      // Cada día arranca con 3 filas de ejercicio para no obligar a clickear de más
+      agregarEjercicio(idDia)
+      agregarEjercicio(idDia)
+      agregarEjercicio(idDia)
+    }
+
+    function quitarDia(idDia) {
+      const bloque = document.getElementById(`dia-${idDia}`)
+      if (bloque) bloque.remove()
+    }
+
+    function agregarEjercicio(idDia) {
+      const lista = document.getElementById(`ejercicios-${idDia}`)
+      const fila = document.createElement('div')
+      fila.className = 'ejercicio-fila'
+      fila.innerHTML = `
+        <input type="text" class="ej-nombre" placeholder="Ejercicio">
+        <input type="text" class="ej-series" placeholder="Series">
+        <input type="text" class="ej-reps" placeholder="Reps">
+        <input type="text" class="ej-peso" placeholder="Kg">
+        <button type="button" class="btn-quitar-ejercicio" onclick="this.parentElement.remove()">&times;</button>
+      `
+      lista.appendChild(fila)
+    }
+
+    document.getElementById('formRutina').addEventListener('submit', async (e) => {
+      e.preventDefault()
+      document.getElementById('mensajeRutina').style.display = 'none'
+
+      const nombreRutina = document.getElementById('nombreRutina').value.trim()
+      const tipoPlan = document.querySelector('input[name="tipoPlan"]:checked')?.value
+      const fechaInicio = document.getElementById('fechaInicio').value
+      const pesoActual = document.getElementById('pesoActual').value
+      const entrenador = document.getElementById('entrenador').value.trim()
+      const objetivo = document.getElementById('objetivo').value.trim()
+
+      if (!nombreRutina || !tipoPlan || !fechaInicio) {
+        mostrarMensaje('mensajeRutina', 'Completá nombre de la rutina, tipo de plan y fecha de inicio.', 'error')
+        return
+      }
+
+      // Armamos la estructura de días y ejercicios desde el DOM
+      const bloquesDias = document.querySelectorAll('.dia-bloque')
+      if (bloquesDias.length === 0) {
+        mostrarMensaje('mensajeRutina', 'Agregá al menos un día de entrenamiento.', 'error')
+        return
+      }
+
+      const dias = []
+      for (const bloque of bloquesDias) {
+        const nombreDia = bloque.querySelector('.nombre-dia').value.trim() || 'Día'
+        const ejercicios = []
+        bloque.querySelectorAll('.ejercicio-fila').forEach(fila => {
+          const nombre = fila.querySelector('.ej-nombre').value.trim()
+          if (!nombre) return // ignoramos filas vacías
+          ejercicios.push({
+            ejercicio: nombre,
+            series: fila.querySelector('.ej-series').value.trim() || null,
+            repeticiones: fila.querySelector('.ej-reps').value.trim() || null,
+            peso_kg: fila.querySelector('.ej-peso').value.trim() || null
+          })
+        })
+        dias.push({ nombreDia, ejercicios })
+      }
+
+      if (dias.every(d => d.ejercicios.length === 0)) {
+        mostrarMensaje('mensajeRutina', 'Cargá al menos un ejercicio en algún día.', 'error')
+        return
+      }
+
+      const btn = document.getElementById('btnGuardarRutina')
+      btn.disabled = true
+      btn.textContent = 'GUARDANDO...'
+
+      try {
+        // 1) Desactivar cualquier rutina anterior que siguiera activa
+        await db
+          .from('rutinas')
+          .update({ activa: false })
+          .eq('socio_id', socioActual.id)
+          .eq('activa', true)
+
+        // 2) Crear la rutina nueva
+        const { data: rutinaCreada, error: errorRutina } = await db
+          .from('rutinas')
+          .insert({
+            socio_id: socioActual.id,
+            nombre: nombreRutina,
+            tipo_plan: tipoPlan,
+            objetivo: objetivo || null,
+            entrenador: entrenador || null,
+            fecha_inicio: fechaInicio,
+            peso_kg: pesoActual || null,
+            activa: true
+          })
+          .select()
+          .single()
+
+        if (errorRutina) throw errorRutina
+
+        // 3) Crear cada día y sus ejercicios
+        for (let i = 0; i < dias.length; i++) {
+          const { data: diaCreado, error: errorDia } = await db
+            .from('rutina_dias')
+            .insert({
+              rutina_id: rutinaCreada.id,
+              numero_dia: i + 1,
+              nombre_dia: dias[i].nombreDia
+            })
+            .select()
+            .single()
+
+          if (errorDia) throw errorDia
+
+          if (dias[i].ejercicios.length > 0) {
+            const filasEjercicios = dias[i].ejercicios.map((ej, index) => ({
+              dia_id: diaCreado.id,
+              orden: index + 1,
+              ejercicio: ej.ejercicio,
+              series: ej.series,
+              repeticiones: ej.repeticiones,
+              peso_kg: ej.peso_kg
+            }))
+
+            const { error: errorEjercicios } = await db
+              .from('rutina_ejercicios')
+              .insert(filasEjercicios)
+
+            if (errorEjercicios) throw errorEjercicios
+          }
+        }
+
+        mostrarMensaje('mensajeRutina', 'Rutina guardada correctamente. Ya está disponible en el link del socio.', 'exito')
+        await cargarHistorial()
+
+      } catch (err) {
+        mostrarMensaje('mensajeRutina', 'Error al guardar la rutina: ' + err.message, 'error')
+      }
+
+      btn.disabled = false
+      btn.textContent = 'GUARDAR RUTINA'
+    })
+  </script>
+</body>
+</html>

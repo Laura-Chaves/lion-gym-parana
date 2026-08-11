@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lion Gym Paraná — Mi Rutina</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f0f0f;
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem 4rem;
+    }
+
+    .cargando, .no-encontrado {
+      text-align: center;
+      color: #888;
+      margin-top: 4rem;
+      max-width: 400px;
+      line-height: 1.6;
+    }
+
+    .no-encontrado .titulo {
+      color: #cc0000;
+      font-size: 1.3rem;
+      font-weight: 800;
+      margin-bottom: 0.6rem;
+    }
+
+    .contenedor {
+      width: 100%;
+      max-width: 780px;
+      display: none;
+    }
+
+    .encabezado-plan {
+      background: #1a1a1a;
+      border: 2px solid #cc0000;
+      border-radius: 16px;
+      padding: 1.6rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .encabezado-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1.3rem;
+      border-bottom: 1px solid #2a2a2a;
+      padding-bottom: 1.2rem;
+    }
+
+    .marca {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    .marca img {
+      width: 56px;
+      height: 56px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 12px #cc0000aa);
+    }
+
+    .marca-texto .logo-texto {
+      font-size: 1.4rem;
+      font-weight: 900;
+      color: #cc0000;
+      letter-spacing: 2px;
+      line-height: 1;
+    }
+
+    .marca-texto .subtitulo {
+      color: #666;
+      font-size: 0.72rem;
+      letter-spacing: 1px;
+    }
+
+    .titulo-plan {
+      font-size: 1.6rem;
+      font-weight: 900;
+      font-style: italic;
+      text-align: right;
+    }
+
+    .titulo-plan .rojo { color: #cc0000; }
+
+    .datos-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    .dato-fila {
+      font-size: 0.92rem;
+      color: #ccc;
+      margin-bottom: 0.55rem;
+    }
+
+    .dato-fila strong {
+      color: #888;
+      font-weight: 600;
+      margin-right: 0.3rem;
+    }
+
+    .tipo-plan-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.3rem;
+    }
+
+    .tipo-plan-tag {
+      font-size: 0.72rem;
+      padding: 0.22rem 0.55rem;
+      border-radius: 5px;
+      border: 1px solid #333;
+      color: #666;
+    }
+
+    .tipo-plan-tag.activo {
+      border-color: #cc0000;
+      color: #cc0000;
+      background: rgba(204,0,0,0.08);
+      font-weight: 700;
+    }
+
+    .selector-rutina {
+      margin-bottom: 1.5rem;
+    }
+
+    .selector-rutina label {
+      display: block;
+      font-size: 0.8rem;
+      color: #888;
+      margin-bottom: 0.4rem;
+    }
+
+    .selector-rutina select {
+      width: 100%;
+      padding: 0.8rem;
+      background: #1a1a1a;
+      border: 2px solid #2a2a2a;
+      border-radius: 8px;
+      color: white;
+      font-size: 0.95rem;
+    }
+
+    .dia-tarjeta {
+      background: #1a1a1a;
+      border: 2px solid #2a2a2a;
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 1.3rem;
+    }
+
+    .dia-header {
+      background: linear-gradient(135deg, #cc0000, #7a0000);
+      padding: 0.9rem 1.3rem;
+      font-weight: 800;
+      font-size: 1rem;
+      letter-spacing: 0.5px;
+    }
+
+    table.tabla-ejercicios {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    table.tabla-ejercicios th {
+      background: #222;
+      color: #999;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      text-align: left;
+      padding: 0.7rem 1rem;
+    }
+
+    table.tabla-ejercicios td {
+      padding: 0.75rem 1rem;
+      font-size: 0.9rem;
+      border-top: 1px solid #262626;
+      color: #eee;
+    }
+
+    table.tabla-ejercicios td.col-num {
+      color: #cc0000;
+      font-weight: 700;
+      width: 2rem;
+    }
+
+    table.tabla-ejercicios tr:nth-child(even) td {
+      background: rgba(255,255,255,0.015);
+    }
+
+    .sin-ejercicios {
+      padding: 1rem 1.3rem;
+      color: #777;
+      font-size: 0.85rem;
+    }
+
+    .objetivo-box {
+      background: #1a1a1a;
+      border: 2px solid #2a2a2a;
+      border-radius: 14px;
+      padding: 1.3rem;
+      margin-top: 0.5rem;
+      font-size: 0.9rem;
+      color: #ccc;
+      line-height: 1.6;
+    }
+
+    .objetivo-box strong { color: #cc0000; }
+
+    .pie {
+      text-align: center;
+      color: #444;
+      font-size: 0.78rem;
+      margin-top: 2.5rem;
+      letter-spacing: 0.5px;
+    }
+
+    @media (max-width: 600px) {
+      .datos-grid { grid-template-columns: 1fr; }
+      .encabezado-top { flex-direction: column; align-items: flex-start; }
+      .titulo-plan { text-align: left; }
+      table.tabla-ejercicios th:nth-child(4),
+      table.tabla-ejercicios td:nth-child(4) { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="cargando" id="cargando">Cargando rutina...</div>
+
+  <div class="no-encontrado" id="noEncontrado" style="display:none;">
+    <div class="titulo">RUTINA NO DISPONIBLE</div>
+    <div id="textoNoEncontrado">Todavía no tenés una rutina cargada. Consultá con tu entrenador.</div>
+  </div>
+
+  <div class="contenedor" id="contenedor">
+
+    <div class="encabezado-plan">
+      <div class="encabezado-top">
+        <div class="marca">
+          <img src="leon.webp" alt="Lion Gym">
+          <div class="marca-texto">
+            <div class="logo-texto">LION GYM</div>
+            <div class="subtitulo">PARANÁ</div>
+          </div>
+        </div>
+        <div class="titulo-plan">PLAN DE <span class="rojo">ENTRENAMIENTO</span></div>
+      </div>
+
+      <div class="datos-grid">
+        <div>
+          <div class="dato-fila"><strong>Nombre:</strong><span id="datoNombre"></span></div>
+          <div class="dato-fila"><strong>Objetivo:</strong><span id="datoObjetivo"></span></div>
+          <div class="dato-fila"><strong>Peso:</strong><span id="datoPeso"></span></div>
+        </div>
+        <div>
+          <div class="dato-fila"><strong>Inicio:</strong><span id="datoFecha"></span></div>
+          <div class="dato-fila"><strong>Entrenador:</strong><span id="datoEntrenador"></span></div>
+          <div class="dato-fila">
+            <strong>Tipo de plan:</strong>
+            <div class="tipo-plan-tags" id="tagsTipoPlan"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="selector-rutina" id="selectorRutinaWrap" style="display:none;">
+      <label>Ver otra rutina</label>
+      <select id="selectorRutina" onchange="cambiarRutina(this.value)"></select>
+    </div>
+
+    <div id="contenedorDias"></div>
+
+  </div>
+
+  <div class="pie" id="pie" style="display:none;">ENTRENA TU CUERPO, FORTALECE TU MENTE, DOMINA TU VIDA.</div>
+
+  <script>
+    const SUPABASE_URL = 'https://hlhsrbstxxdanyckujem.supabase.co'
+    const SUPABASE_KEY = 'sb_publishable_NOA6FfVrGTtkX0eu_rvyZA_Uyye2XRl'
+    const { createClient } = supabase
+    const db = createClient(SUPABASE_URL, SUPABASE_KEY)
+
+    const TIPOS_PLAN = ['Fuerza', 'Hipertrofia', 'Potencia', 'Resistencia', 'Recomposición', 'Otro']
+
+    let socio = null
+    let rutinas = []
+
+    function idSocioDesdeURL() {
+      const params = new URLSearchParams(window.location.search)
+      return params.get('socio')
+    }
+
+    async function iniciar() {
+      const socioId = idSocioDesdeURL()
+
+      if (!socioId) {
+        mostrarNoEncontrado('El link no es válido. Pedile a tu entrenador que te lo vuelva a enviar.')
+        return
+      }
+
+      const { data: socios, error } = await db
+        .from('socios')
+        .select('*')
+        .eq('id', socioId)
+        .limit(1)
+
+      if (error || !socios || socios.length === 0) {
+        mostrarNoEncontrado('No encontramos tu ficha. Pedile a tu entrenador que te lo vuelva a enviar.')
+        return
+      }
+
+      socio = socios[0]
+
+      const { data: rutinasData } = await db
+        .from('rutinas')
+        .select('*')
+        .eq('socio_id', socioId)
+        .order('created_at', { ascending: false })
+
+      rutinas = rutinasData || []
+
+      if (rutinas.length === 0) {
+        mostrarNoEncontrado()
+        return
+      }
+
+      // Mostramos primero la activa; si por algún motivo no hay ninguna marcada
+      // como activa, mostramos la más reciente.
+      const rutinaInicial = rutinas.find(r => r.activa) || rutinas[0]
+
+      armarSelector()
+      await mostrarRutina(rutinaInicial.id)
+
+      document.getElementById('cargando').style.display = 'none'
+      document.getElementById('contenedor').style.display = 'block'
+      document.getElementById('pie').style.display = 'block'
+    }
+
+    function mostrarNoEncontrado(texto) {
+      document.getElementById('cargando').style.display = 'none'
+      if (texto) document.getElementById('textoNoEncontrado').textContent = texto
+      document.getElementById('noEncontrado').style.display = 'block'
+    }
+
+    function armarSelector() {
+      if (rutinas.length <= 1) return
+
+      const select = document.getElementById('selectorRutina')
+      select.innerHTML = rutinas.map(r => {
+        const fecha = r.fecha_inicio ? new Date(r.fecha_inicio + 'T00:00:00').toLocaleDateString('es-AR') : ''
+        const etiqueta = r.activa ? `${r.nombre} — VIGENTE` : `${r.nombre} (desde ${fecha})`
+        return `<option value="${r.id}">${etiqueta}</option>`
+      }).join('')
+
+      document.getElementById('selectorRutinaWrap').style.display = 'block'
+    }
+
+    async function cambiarRutina(rutinaId) {
+      await mostrarRutina(rutinaId)
+    }
+
+    async function mostrarRutina(rutinaId) {
+      const rutina = rutinas.find(r => r.id === rutinaId)
+      if (!rutina) return
+
+      document.getElementById('selectorRutina').value = rutinaId
+
+      document.getElementById('datoNombre').textContent = socio.nombre
+      document.getElementById('datoObjetivo').textContent = rutina.objetivo || '—'
+      document.getElementById('datoPeso').textContent = rutina.peso_kg ? `${rutina.peso_kg} kg` : '—'
+      document.getElementById('datoFecha').textContent = rutina.fecha_inicio
+        ? new Date(rutina.fecha_inicio + 'T00:00:00').toLocaleDateString('es-AR')
+        : '—'
+      document.getElementById('datoEntrenador').textContent = rutina.entrenador || '—'
+
+      document.getElementById('tagsTipoPlan').innerHTML = TIPOS_PLAN.map(t =>
+        `<span class="tipo-plan-tag ${t === rutina.tipo_plan ? 'activo' : ''}">${t}</span>`
+      ).join('')
+
+      const { data: dias } = await db
+        .from('rutina_dias')
+        .select('*')
+        .eq('rutina_id', rutinaId)
+        .order('numero_dia', { ascending: true })
+
+      const contenedorDias = document.getElementById('contenedorDias')
+
+      if (!dias || dias.length === 0) {
+        contenedorDias.innerHTML = '<div class="objetivo-box">Esta rutina todavía no tiene días cargados.</div>'
+        return
+      }
+
+      let html = ''
+      for (const dia of dias) {
+        const { data: ejercicios } = await db
+          .from('rutina_ejercicios')
+          .select('*')
+          .eq('dia_id', dia.id)
+          .order('orden', { ascending: true })
+
+        html += `<div class="dia-tarjeta">
+          <div class="dia-header">${dia.nombre_dia || `Día ${dia.numero_dia}`}</div>`
+
+        if (!ejercicios || ejercicios.length === 0) {
+          html += `<div class="sin-ejercicios">Sin ejercicios cargados en este día.</div>`
+        } else {
+          html += `<table class="tabla-ejercicios">
+            <thead>
+              <tr><th></th><th>Ejercicio</th><th>Series</th><th>Reps</th><th>Peso</th></tr>
+            </thead>
+            <tbody>`
+          ejercicios.forEach((ej, i) => {
+            html += `<tr>
+              <td class="col-num">${i + 1}</td>
+              <td>${ej.ejercicio}</td>
+              <td>${ej.series || '—'}</td>
+              <td>${ej.repeticiones || '—'}</td>
+              <td>${ej.peso_kg || '—'}</td>
+            </tr>`
+          })
+          html += `</tbody></table>`
+        }
+
+        html += `</div>`
+      }
+
+      contenedorDias.innerHTML = html
+    }
+
+    iniciar()
+  </script>
+</body>
+</html>
