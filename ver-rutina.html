@@ -238,6 +238,66 @@
       table.tabla-ejercicios th:nth-child(4),
       table.tabla-ejercicios td:nth-child(4) { display: none; }
     }
+
+    .btn-descargar {
+      display: block;
+      width: 100%;
+      max-width: 780px;
+      margin: 0 auto 1.2rem;
+      padding: 0.9rem;
+      background: #cc0000;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+    }
+    .btn-descargar:hover { background: #aa0000; }
+
+    .combo-grupo {
+      background: #1a1a1a;
+      border: 2px solid #2a2a2a;
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 1.3rem;
+    }
+
+    .combo-etiqueta {
+      background: rgba(204,0,0,0.12);
+      color: #ff6b6b;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      padding: 0.5rem 1.3rem;
+      border-bottom: 1px dashed #333;
+    }
+
+    .combo-grupo .dia-tarjeta {
+      margin-bottom: 0;
+      border: none;
+      border-radius: 0;
+      border-top: 1px solid #262626;
+    }
+    .combo-grupo .dia-tarjeta:first-of-type { border-top: none; }
+
+    @media print {
+      body { background: #fff; color: #111; padding: 0.5rem; }
+      .btn-descargar, .selector-rutina, .cargando, .pie { display: none !important; }
+      .encabezado-plan, .dia-tarjeta, .combo-grupo, .objetivo-box {
+        background: #fff; border-color: #ccc; box-shadow: none;
+      }
+      .dia-header { background: #cc0000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; color: #fff; }
+      .combo-etiqueta { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      table.tabla-ejercicios th { background: #eee; color: #333; }
+      table.tabla-ejercicios td { color: #111; border-color: #ddd; }
+      .dato-fila, .dato-fila strong { color: #111; }
+      .tipo-plan-tag { color: #999; border-color: #ccc; }
+      .tipo-plan-tag.activo { color: #cc0000; border-color: #cc0000; }
+      .dia-tarjeta, .combo-grupo { page-break-inside: avoid; }
+    }
   </style>
 </head>
 <body>
@@ -284,6 +344,8 @@
       <label>Ver otra rutina</label>
       <select id="selectorRutina" onchange="cambiarRutina(this.value)"></select>
     </div>
+
+    <button class="btn-descargar" onclick="window.print()">DESCARGAR / IMPRIMIR PDF</button>
 
     <div id="contenedorDias"></div>
 
@@ -415,33 +477,81 @@
           .eq('dia_id', dia.id)
           .order('orden', { ascending: true })
 
-        html += `<div class="dia-tarjeta">
-          <div class="dia-header">${dia.nombre_dia || `Día ${dia.numero_dia}`}</div>`
-
-        if (!ejercicios || ejercicios.length === 0) {
-          html += `<div class="sin-ejercicios">Sin ejercicios cargados en este día.</div>`
-        } else {
-          html += `<table class="tabla-ejercicios">
-            <thead>
-              <tr><th></th><th>Ejercicio</th><th>Series</th><th>Reps</th><th>Peso</th></tr>
-            </thead>
-            <tbody>`
-          ejercicios.forEach((ej, i) => {
-            html += `<tr>
-              <td class="col-num">${i + 1}</td>
-              <td>${ej.ejercicio}</td>
-              <td>${ej.series || '—'}</td>
-              <td>${ej.repeticiones || '—'}</td>
-              <td>${ej.peso_kg || '—'}</td>
-            </tr>`
-          })
-          html += `</tbody></table>`
-        }
-
-        html += `</div>`
+        html += renderizarDia(dia, ejercicios || [])
       }
 
       contenedorDias.innerHTML = html
+    }
+
+    function renderizarChips(texto) {
+      if (!texto) return '—'
+      const partes = texto.split(/[-,]/).map(p => p.trim()).filter(Boolean)
+      if (partes.length <= 1) return texto
+      return `<div style="display:flex; gap:4px; flex-wrap:wrap;">${
+        partes.map(p => `<span style="background:#262626; border-radius:5px; padding:0.15rem 0.4rem; font-size:0.82rem;">${p}</span>`).join('')
+      }</div>`
+    }
+
+    function renderizarTablaEjercicios(ejercicios, etiquetas, esCombo) {
+      let html = `<table class="tabla-ejercicios" style="${esCombo ? 'border-left:4px solid #cc0000;' : ''}">
+        <thead>
+          <tr><th></th><th>Ejercicio</th><th>Series</th><th>Reps por serie</th><th>Peso</th></tr>
+        </thead>
+        <tbody>`
+      ejercicios.forEach((ej, i) => {
+        html += `<tr>
+          <td class="col-num">${etiquetas[i]}</td>
+          <td>${ej.ejercicio}</td>
+          <td>${ej.series || '—'}</td>
+          <td>${renderizarChips(ej.repeticiones)}</td>
+          <td>${renderizarChips(ej.peso_kg)}</td>
+        </tr>`
+      })
+      html += `</tbody></table>`
+      return html
+    }
+
+    function renderizarDia(dia, ejercicios) {
+      let html = `<div class="dia-tarjeta">
+        <div class="dia-header">${dia.nombre_dia || `Día ${dia.numero_dia}`}</div>`
+
+      if (ejercicios.length === 0) {
+        html += `<div class="sin-ejercicios">Sin ejercicios cargados en este día.</div></div>`
+        return html
+      }
+
+      // Agrupamos en bloques: un ejercicio marcado como "combinado_siguiente"
+      // se une al que sigue (y así en cadena, para trisets o más).
+      const bloques = []
+      let bloqueActual = []
+
+      ejercicios.forEach((ej, i) => {
+        bloqueActual.push(ej)
+        const esUltimo = i === ejercicios.length - 1
+        if (!ej.combinado_siguiente || esUltimo) {
+          bloques.push(bloqueActual)
+          bloqueActual = []
+        }
+      })
+
+      html += `<div>` // wrapper interno de la tarjeta del día
+
+      let numeroBloque = 0
+      const LETRAS = 'ABCDEFGH'
+
+      bloques.forEach(bloque => {
+        numeroBloque++
+        if (bloque.length > 1) {
+          const etiquetas = bloque.map((_, i) => `${numeroBloque}${LETRAS[i]}`)
+          html += `<div class="combo-etiqueta">Combinado (superset) — ${bloque.length} ejercicios seguidos, sin descanso entre ellos</div>`
+          html += renderizarTablaEjercicios(bloque, etiquetas, true)
+        } else {
+          html += renderizarTablaEjercicios(bloque, [String(numeroBloque)], false)
+        }
+      })
+
+      html += `</div></div>`
+      return html
     }
 
     iniciar()
