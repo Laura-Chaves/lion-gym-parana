@@ -294,10 +294,21 @@
 
     .ejercicio-fila {
       display: grid;
-      grid-template-columns: 2fr 0.8fr 0.8fr 0.8fr auto;
+      grid-template-columns: 2fr 0.8fr 1fr 0.8fr 3.6rem 2.2rem;
       gap: 0.5rem;
       margin-bottom: 0.5rem;
       align-items: center;
+    }
+
+    .ejercicio-fila .combo-check {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: auto;
+    }
+
+    .ejercicio-fila .combo-check input {
+      width: auto;
     }
 
     .ejercicio-fila input {
@@ -340,14 +351,22 @@
 
     .encabezados-ejercicio {
       display: grid;
-      grid-template-columns: 2fr 0.8fr 0.8fr 0.8fr auto;
+      grid-template-columns: 2fr 0.8fr 1fr 0.8fr 3.6rem 2.2rem;
       gap: 0.5rem;
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       color: #777;
       margin-bottom: 0.4rem;
-      padding: 0 0.1rem;
+      padding: 0;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.3px;
+      text-align: center;
+    }
+
+    .encabezados-ejercicio span:first-child,
+    .encabezados-ejercicio span:nth-child(2),
+    .encabezados-ejercicio span:nth-child(3),
+    .encabezados-ejercicio span:nth-child(4) {
+      text-align: left;
     }
 
     .btn-agregar-dia {
@@ -402,6 +421,9 @@
         Este link es siempre el mismo para este socio. Cuando le cargues una rutina nueva, el mismo link va a mostrar la actualizada.
       </div>
       <div class="link-box" id="linkTexto"></div>
+      <div class="mensaje info" id="avisoTelefono" style="display:none; margin-top:0; margin-bottom:0.8rem;">
+        Este socio no tiene teléfono cargado, así que al enviar vas a tener que elegir el contacto a mano. Para que se abra directo, cargale el teléfono desde "Editar socio".
+      </div>
       <div class="link-botones">
         <button class="btn-secundario" onclick="copiarLink()">COPIAR LINK</button>
         <a class="btn-buscar" id="linkWhatsapp" target="_blank">ENVIAR POR WHATSAPP</a>
@@ -454,6 +476,9 @@
         </div>
 
         <h2 style="margin-top:1.8rem;">DÍAS Y EJERCICIOS</h2>
+        <div style="color:#888; font-size:0.82rem; margin-bottom:1rem; line-height:1.5;">
+          En "Reps" podés escribir una repetición fija (ej: 10) o distinta por serie separada por guiones (ej: 12-10-10-8). Marcá el tilde de "Combinado" en un ejercicio para agruparlo con el que sigue en la lista (superset/biserie).
+        </div>
         <div id="contenedorDias"></div>
         <button type="button" class="btn-agregar-dia" onclick="agregarDia()">+ AGREGAR DÍA</button>
 
@@ -542,13 +567,49 @@
       document.getElementById('tarjetaNueva').classList.remove('tarjeta-oculta')
     }
 
+    function formatearTelefonoWhatsapp(telefono) {
+      let digits = telefono.replace(/\D/g, '')
+      if (!digits) return null
+
+      // Si ya viene con el código de país (54), lo sacamos para trabajar
+      // solo con el número local y no duplicarlo después.
+      if (digits.startsWith('54')) digits = digits.slice(2)
+
+      // Si ya tiene el 9 de celular argentino pegado, también lo sacamos.
+      if (digits.startsWith('9')) digits = digits.slice(1)
+
+      // Sacamos el 0 de larga distancia inicial, si está.
+      if (digits.startsWith('0')) digits = digits.slice(1)
+
+      // Sacamos el "15" de celular si quedó pegado después del código de
+      // área (probamos códigos de área de 2 a 4 dígitos, que son los que
+      // se usan en Argentina).
+      digits = digits.replace(/^(\d{2,4})15/, '$1')
+
+      return `549${digits}`
+    }
+
     function mostrarLink() {
       const base = window.location.origin + window.location.pathname.replace('rutinas.html', '')
       const link = `${base}ver-rutina.html?socio=${socioActual.id}`
       document.getElementById('linkTexto').textContent = link
 
       const mensajeWpp = encodeURIComponent(`Hola ${socioActual.nombre}! Te paso el link de tu rutina de entrenamiento: ${link}`)
-      document.getElementById('linkWhatsapp').href = `https://wa.me/?text=${mensajeWpp}`
+      const botonWpp = document.getElementById('linkWhatsapp')
+      const avisoWpp = document.getElementById('avisoTelefono')
+
+      if (socioActual.telefono) {
+        const numero = formatearTelefonoWhatsapp(socioActual.telefono)
+        botonWpp.href = `https://wa.me/${numero}?text=${mensajeWpp}`
+        botonWpp.textContent = 'ENVIAR POR WHATSAPP'
+        avisoWpp.style.display = 'none'
+      } else {
+        // Sin teléfono cargado: caemos al comportamiento anterior,
+        // donde el profe elige el contacto a mano.
+        botonWpp.href = `https://wa.me/?text=${mensajeWpp}`
+        botonWpp.textContent = 'ENVIAR (ELEGIR CONTACTO)'
+        avisoWpp.style.display = 'block'
+      }
     }
 
     function copiarLink() {
@@ -610,7 +671,7 @@
           <button type="button" class="btn-quitar-dia" onclick="quitarDia(${idDia})">QUITAR DÍA</button>
         </div>
         <div class="encabezados-ejercicio">
-          <span>Ejercicio</span><span>Series</span><span>Reps</span><span>Peso (kg)</span><span></span>
+          <span>Ejercicio</span><span>Series</span><span>Reps</span><span>Peso (kg)</span><span>Combinado</span><span></span>
         </div>
         <div class="lista-ejercicios" id="ejercicios-${idDia}"></div>
         <button type="button" class="btn-agregar-ejercicio" onclick="agregarEjercicio(${idDia})">+ Agregar ejercicio</button>
@@ -635,8 +696,11 @@
       fila.innerHTML = `
         <input type="text" class="ej-nombre" placeholder="Ejercicio">
         <input type="text" class="ej-series" placeholder="Series">
-        <input type="text" class="ej-reps" placeholder="Reps">
+        <input type="text" class="ej-reps" placeholder="Ej: 12-10-10-8">
         <input type="text" class="ej-peso" placeholder="Kg">
+        <label class="combo-check" title="Combinar con el ejercicio siguiente">
+          <input type="checkbox" class="ej-combo">
+        </label>
         <button type="button" class="btn-quitar-ejercicio" onclick="this.parentElement.remove()">&times;</button>
       `
       lista.appendChild(fila)
@@ -676,7 +740,8 @@
             ejercicio: nombre,
             series: fila.querySelector('.ej-series').value.trim() || null,
             repeticiones: fila.querySelector('.ej-reps').value.trim() || null,
-            peso_kg: fila.querySelector('.ej-peso').value.trim() || null
+            peso_kg: fila.querySelector('.ej-peso').value.trim() || null,
+            combinado_siguiente: fila.querySelector('.ej-combo').checked
           })
         })
         dias.push({ nombreDia, ejercicios })
@@ -738,7 +803,8 @@
               ejercicio: ej.ejercicio,
               series: ej.series,
               repeticiones: ej.repeticiones,
-              peso_kg: ej.peso_kg
+              peso_kg: ej.peso_kg,
+              combinado_siguiente: ej.combinado_siguiente
             }))
 
             const { error: errorEjercicios } = await db
