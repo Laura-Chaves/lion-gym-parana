@@ -186,12 +186,6 @@
       border: 1px solid #7a1a1a;
     }
 
-    .badge-sin-modulo {
-      background: #1a1a2e;
-      color: #8a8adf;
-      border: 1px solid #3a3a7a;
-    }
-
     .badge-sin-membresia {
       background: #2a2a2a;
       color: #999;
@@ -203,16 +197,6 @@
       font-size: 0.9rem;
       text-align: center;
       padding: 2.5rem 1rem;
-    }
-
-    .aviso-modulo {
-      background: rgba(138,138,223,0.1);
-      border: 1px solid #3a3a7a;
-      border-radius: 10px;
-      padding: 0.9rem 1.1rem;
-      font-size: 0.85rem;
-      color: #8a8adf;
-      margin-bottom: 1.2rem;
     }
   </style>
 </head>
@@ -241,16 +225,12 @@
       </div>
       <div class="resumen-item pagados">
         <div class="numero" id="totalPagados">—</div>
-        <div class="etiqueta">AL DÍA ESTE MES</div>
+        <div class="etiqueta">AL DÍA</div>
       </div>
       <div class="resumen-item pendientes">
         <div class="numero" id="totalPendientes">—</div>
         <div class="etiqueta">PENDIENTES</div>
       </div>
-    </div>
-
-    <div class="aviso-modulo" id="avisoModulo" style="display:none;">
-      El control de cuotas todavía está desactivado en recepción (MODULO_PAGOS_ACTIVO = false). Este panel ya calcula el estado real de cada socio para que puedas hacer seguimiento, aunque recepción todavía no lo muestre a los socios.
     </div>
 
     <div class="barra-busqueda">
@@ -281,10 +261,6 @@
     const { createClient } = supabase
     const db = createClient(SUPABASE_URL, SUPABASE_KEY)
 
-    // Mismo flag que recepcion.html — cuando se active allá, cambiar acá también
-    // (es solo informativo en este panel, el cálculo de estado siempre se muestra)
-    const MODULO_PAGOS_ACTIVO_EN_RECEPCION = false
-
     // Protección de acceso: solo administradores logueados
     async function verificarAcceso() {
       const { data } = await db.auth.getSession()
@@ -311,16 +287,12 @@
       window.location.href = 'login.html'
     }
 
-    if (!MODULO_PAGOS_ACTIVO_EN_RECEPCION) {
-      document.getElementById('avisoModulo').style.display = 'block'
-    }
-
     let filasCompletas = []
 
     async function cargarPanel() {
       const ahora = new Date()
-      const anioActual = ahora.getFullYear()
-      const mesActual = ahora.getMonth() + 1
+      const diaActual = ahora.getDate()
+      const hoyMedianoche = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate())
 
       const { data: socios, error } = await db
         .from('socios')
@@ -333,13 +305,20 @@
         return
       }
 
-      const { data: pagosDelMes } = await db
+      // Traemos todos los pagos ordenados por fecha (el más reciente primero)
+      // y nos quedamos con el primero que aparece para cada socio — o sea,
+      // su último pago. Misma lógica que usa recepcion.html.
+      const { data: todosPagos } = await db
         .from('pagos')
-        .select('socio_id')
-        .eq('anio', anioActual)
-        .eq('mes', mesActual)
+        .select('socio_id, fecha_pago')
+        .order('fecha_pago', { ascending: false })
 
-      const dniConPago = new Set((pagosDelMes || []).map(p => p.socio_id))
+      const ultimoPagoPorSocio = {}
+      ;(todosPagos || []).forEach(p => {
+        if (!ultimoPagoPorSocio[p.socio_id]) {
+          ultimoPagoPorSocio[p.socio_id] = p.fecha_pago
+        }
+      })
 
       filasCompletas = socios.map(s => {
         const membresiasActivas = (s.membresias || []).filter(m => m.estado === 'activa')
@@ -349,8 +328,32 @@
         let textoEstado = 'Sin membresía'
 
         if (membresia) {
-          estado = dniConPago.has(s.id) ? 'pagado' : 'pendiente'
-          textoEstado = dniConPago.has(s.id) ? `${mesNombre(mesActual)} pagado` : `${mesNombre(mesActual)} pendiente`
+          const diaCorteRecargo = membresia.planes.dia_vencimiento || 10
+          const fechaPago = ultimoPagoPorSocio[s.id]
+
+          if (fechaPago) {
+            const vencimiento = new Date(fechaPago)
+            vencimiento.setMonth(vencimiento.getMonth() + 1)
+            const vencMedianoche = new Date(vencimiento.getFullYear(), vencimiento.getMonth(), vencimiento.getDate())
+            const diffDias = Math.round((vencMedianoche - hoyMedianoche) / (1000 * 60 * 60 * 24))
+
+            if (diffDias >= 0) {
+              estado = 'pagado'
+              textoEstado = diffDias === 0
+                ? 'Vence hoy'
+                : `Al día (${diffDias} ${diffDias === 1 ? 'día' : 'días'})`
+            } else {
+              const diasVencido = Math.abs(diffDias)
+              const conRecargo = diaActual > diaCorteRecargo
+              estado = 'pendiente'
+              textoEstado = conRecargo
+                ? `Vencida hace ${diasVencido} ${diasVencido === 1 ? 'día' : 'días'} — con recargo`
+                : `Vencida hace ${diasVencido} ${diasVencido === 1 ? 'día' : 'días'}`
+            }
+          } else {
+            estado = 'pendiente'
+            textoEstado = 'Sin pagos registrados'
+          }
         }
 
         return {
@@ -364,12 +367,6 @@
 
       renderizarTabla(filasCompletas)
       actualizarResumen(filasCompletas)
-    }
-
-    function mesNombre(mes) {
-      const nombres = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
-      return nombres[mes]
     }
 
     function badgeClase(estado) {
