@@ -398,6 +398,7 @@
       <a href="alta-socio.html">+ Alta de socio</a>
       <a href="editar-socio.html">Editar socio</a>
       <a href="panel-general.html">Panel general</a>
+      <a href="plantillas.html">Plantillas</a>
       <a href="#" onclick="cerrarSesion(); return false;">Cerrar sesión</a>
     </div>
   </div>
@@ -436,8 +437,18 @@
     </div>
 
     <div class="tarjeta tarjeta-oculta" id="tarjetaNueva">
-      <h2>NUEVA RUTINA</h2>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.2rem;">
+        <h2 id="tituloFormRutina" style="margin-bottom:0;">NUEVA RUTINA</h2>
+        <button type="button" class="btn-secundario" id="btnCancelarEdicion" style="display:none; width:auto; padding:0.5rem 1rem; font-size:0.8rem;" onclick="prepararFormularioNuevo()">CANCELAR EDICIÓN</button>
+      </div>
       <form id="formRutina">
+        <div class="campo" id="campoPlantilla">
+          <label>Empezar desde una plantilla (opcional)</label>
+          <select id="selectorPlantilla" onchange="aplicarPlantilla(this.value)">
+            <option value="">— Elegir plantilla —</option>
+          </select>
+        </div>
+
         <div class="campo">
           <label>Nombre de la rutina <span class="obligatorio">*</span></label>
           <input type="text" id="nombreRutina" placeholder="Ej: Rutina de Fuerza — Agosto" required>
@@ -480,7 +491,7 @@
           En "Reps" podés escribir una repetición fija (ej: 10) o distinta por serie separada por guiones (ej: 12-10-10-8). Marcá el tilde de "Combinado" en un ejercicio para agruparlo con el que sigue en la lista (superset/biserie).
         </div>
         <div id="contenedorDias"></div>
-        <button type="button" class="btn-agregar-dia" onclick="agregarDia()">+ AGREGAR DÍA</button>
+        <button type="button" class="btn-agregar-dia" onclick="agregarDiaManual()">+ AGREGAR DÍA</button>
 
         <button type="submit" class="btn-guardar" id="btnGuardarRutina">GUARDAR RUTINA</button>
         <div class="mensaje" id="mensajeRutina"></div>
@@ -497,6 +508,7 @@
 
     let socioActual = null
     let contadorDias = 0
+    let rutinaEditandoId = null
 
     async function verificarAcceso() {
       const { data } = await db.auth.getSession()
@@ -560,6 +572,7 @@
 
       mostrarLink()
       await cargarHistorial()
+      await cargarPlantillasDisponibles()
       prepararFormularioNuevo()
 
       document.getElementById('tarjetaLink').classList.remove('tarjeta-oculta')
@@ -639,25 +652,43 @@
         return `
           <div class="historial-item">
             <span>${r.nombre} — ${r.tipo_plan} (desde ${fecha})</span>
-            ${r.activa ? '<span class="badge-activa">VIGENTE</span>' : ''}
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+              ${r.activa ? '<span class="badge-activa">VIGENTE</span>' : ''}
+              <button type="button" class="btn-secundario" style="width:auto; padding:0.35rem 0.8rem; font-size:0.75rem;" onclick="editarRutina('${r.id}')">EDITAR</button>
+            </div>
           </div>
         `
       }).join('')
     }
 
+    function agregarDiaManual() {
+      const idDia = agregarDia()
+      agregarEjercicio(idDia)
+      agregarEjercicio(idDia)
+      agregarEjercicio(idDia)
+    }
+
     function prepararFormularioNuevo() {
+      rutinaEditandoId = null
       document.getElementById('formRutina').reset()
       document.getElementById('mensajeRutina').style.display = 'none'
       document.getElementById('fechaInicio').value = new Date().toISOString().split('T')[0]
       document.getElementById('contenedorDias').innerHTML = ''
       contadorDias = 0
-      agregarDia()
+      agregarDiaManual()
+
+      document.getElementById('tituloFormRutina').textContent = 'NUEVA RUTINA'
+      document.getElementById('btnGuardarRutina').textContent = 'GUARDAR RUTINA'
+      document.getElementById('btnCancelarEdicion').style.display = 'none'
+      document.getElementById('campoPlantilla').style.display = 'block'
+      document.getElementById('selectorPlantilla').value = ''
     }
 
-    function agregarDia() {
+    function agregarDia(nombreDia) {
       contadorDias++
       const idDia = contadorDias
       const contenedor = document.getElementById('contenedorDias')
+      const numeroVisible = contenedor.children.length + 1
 
       const bloque = document.createElement('div')
       bloque.className = 'dia-bloque'
@@ -666,7 +697,7 @@
         <div class="dia-encabezado">
           <div class="campo">
             <label>Nombre del día</label>
-            <input type="text" class="nombre-dia" value="Día ${contenedor.children.length + 1}" placeholder="Ej: Día 1 — Pecho y tríceps">
+            <input type="text" class="nombre-dia" value="${nombreDia ? nombreDia.replace(/"/g, '&quot;') : `Día ${numeroVisible}`}" placeholder="Ej: Día 1 — Pecho y tríceps">
           </div>
           <button type="button" class="btn-quitar-dia" onclick="quitarDia(${idDia})">QUITAR DÍA</button>
         </div>
@@ -677,11 +708,7 @@
         <button type="button" class="btn-agregar-ejercicio" onclick="agregarEjercicio(${idDia})">+ Agregar ejercicio</button>
       `
       contenedor.appendChild(bloque)
-
-      // Cada día arranca con 3 filas de ejercicio para no obligar a clickear de más
-      agregarEjercicio(idDia)
-      agregarEjercicio(idDia)
-      agregarEjercicio(idDia)
+      return idDia
     }
 
     function quitarDia(idDia) {
@@ -689,21 +716,161 @@
       if (bloque) bloque.remove()
     }
 
-    function agregarEjercicio(idDia) {
+    function agregarEjercicio(idDia, valores) {
+      const v = valores || {}
       const lista = document.getElementById(`ejercicios-${idDia}`)
       const fila = document.createElement('div')
       fila.className = 'ejercicio-fila'
       fila.innerHTML = `
-        <input type="text" class="ej-nombre" placeholder="Ejercicio">
-        <input type="text" class="ej-series" placeholder="Series">
-        <input type="text" class="ej-reps" placeholder="Ej: 12-10-10-8">
-        <input type="text" class="ej-peso" placeholder="Kg">
+        <input type="text" class="ej-nombre" placeholder="Ejercicio" value="${v.ejercicio ? String(v.ejercicio).replace(/"/g, '&quot;') : ''}">
+        <input type="text" class="ej-series" placeholder="Series" value="${v.series ? String(v.series).replace(/"/g, '&quot;') : ''}">
+        <input type="text" class="ej-reps" placeholder="Ej: 12-10-10-8" value="${v.repeticiones ? String(v.repeticiones).replace(/"/g, '&quot;') : ''}">
+        <input type="text" class="ej-peso" placeholder="Kg" value="${v.peso_kg ? String(v.peso_kg).replace(/"/g, '&quot;') : ''}">
         <label class="combo-check" title="Combinar con el ejercicio siguiente">
-          <input type="checkbox" class="ej-combo">
+          <input type="checkbox" class="ej-combo" ${v.combinado_siguiente ? 'checked' : ''}>
         </label>
         <button type="button" class="btn-quitar-ejercicio" onclick="this.parentElement.remove()">&times;</button>
       `
       lista.appendChild(fila)
+    }
+
+    // Vacía el formulario de días y lo reconstruye a partir de una lista de
+    // días con sus ejercicios (se usa tanto para editar una rutina existente
+    // como para aplicar una plantilla).
+    function cargarDiasEnFormulario(dias) {
+      document.getElementById('contenedorDias').innerHTML = ''
+      contadorDias = 0
+
+      if (!dias || dias.length === 0) {
+        agregarDiaManual()
+        return
+      }
+
+      dias.forEach(dia => {
+        const idDia = agregarDia(dia.nombre_dia)
+        const ejercicios = dia.ejercicios || []
+        if (ejercicios.length === 0) {
+          agregarEjercicio(idDia)
+        } else {
+          ejercicios.forEach(ej => agregarEjercicio(idDia, ej))
+        }
+      })
+    }
+
+    // Trae de la base los días y ejercicios de una rutina (sirve tanto para
+    // una rutina real de socio como para una plantilla, es la misma tabla).
+    async function obtenerDiasDeRutina(rutinaId) {
+      const { data: dias } = await db
+        .from('rutina_dias')
+        .select('*')
+        .eq('rutina_id', rutinaId)
+        .order('numero_dia', { ascending: true })
+
+      const diasConEjercicios = []
+      for (const dia of dias || []) {
+        const { data: ejercicios } = await db
+          .from('rutina_ejercicios')
+          .select('*')
+          .eq('dia_id', dia.id)
+          .order('orden', { ascending: true })
+
+        diasConEjercicios.push({ nombre_dia: dia.nombre_dia, ejercicios: ejercicios || [] })
+      }
+      return diasConEjercicios
+    }
+
+    async function editarRutina(rutinaId) {
+      const { data: rutina, error } = await db
+        .from('rutinas')
+        .select('*')
+        .eq('id', rutinaId)
+        .single()
+
+      if (error || !rutina) {
+        mostrarMensaje('mensajeRutina', 'No se pudo cargar la rutina para editar.', 'error')
+        return
+      }
+
+      rutinaEditandoId = rutina.id
+
+      document.getElementById('mensajeRutina').style.display = 'none'
+      document.getElementById('nombreRutina').value = rutina.nombre || ''
+      document.getElementById('fechaInicio').value = rutina.fecha_inicio || ''
+      document.getElementById('pesoActual').value = rutina.peso_kg || ''
+      document.getElementById('entrenador').value = rutina.entrenador || ''
+      document.getElementById('objetivo').value = rutina.objetivo || ''
+
+      const radioTipo = document.querySelector(`input[name="tipoPlan"][value="${rutina.tipo_plan}"]`)
+      if (radioTipo) radioTipo.checked = true
+
+      const dias = await obtenerDiasDeRutina(rutina.id)
+      cargarDiasEnFormulario(dias)
+
+      document.getElementById('tituloFormRutina').textContent = `EDITANDO: ${rutina.nombre}`
+      document.getElementById('btnGuardarRutina').textContent = 'GUARDAR CAMBIOS'
+      document.getElementById('btnCancelarEdicion').style.display = 'block'
+      document.getElementById('campoPlantilla').style.display = 'none'
+
+      document.getElementById('tarjetaNueva').scrollIntoView({ behavior: 'smooth' })
+    }
+
+    async function cargarPlantillasDisponibles() {
+      const { data: plantillas } = await db
+        .from('rutinas')
+        .select('id, nombre, nivel')
+        .eq('es_plantilla', true)
+        .order('nivel', { ascending: true })
+        .order('nombre', { ascending: true })
+
+      const select = document.getElementById('selectorPlantilla')
+
+      if (!plantillas || plantillas.length === 0) {
+        select.innerHTML = '<option value="">— No hay plantillas cargadas todavía —</option>'
+        return
+      }
+
+      const niveles = ['Principiante', 'Intermedio', 'Avanzado']
+      let html = '<option value="">— Elegir plantilla —</option>'
+
+      niveles.forEach(nivel => {
+        const deEsteNivel = plantillas.filter(p => p.nivel === nivel)
+        if (deEsteNivel.length === 0) return
+        html += `<optgroup label="${nivel}">`
+        html += deEsteNivel.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('')
+        html += `</optgroup>`
+      })
+
+      select.innerHTML = html
+    }
+
+    async function aplicarPlantilla(plantillaId) {
+      if (!plantillaId) return
+
+      const hayContenido = document.querySelectorAll('.ejercicio-fila .ej-nombre').length > 0 &&
+        Array.from(document.querySelectorAll('.ejercicio-fila .ej-nombre')).some(i => i.value.trim())
+
+      if (hayContenido && !confirm('Esto va a reemplazar los días y ejercicios que ya cargaste en el formulario. ¿Continuar?')) {
+        document.getElementById('selectorPlantilla').value = ''
+        return
+      }
+
+      const { data: plantilla, error } = await db
+        .from('rutinas')
+        .select('*')
+        .eq('id', plantillaId)
+        .single()
+
+      if (error || !plantilla) {
+        mostrarMensaje('mensajeRutina', 'No se pudo cargar la plantilla.', 'error')
+        return
+      }
+
+      const radioTipo = document.querySelector(`input[name="tipoPlan"][value="${plantilla.tipo_plan}"]`)
+      if (radioTipo) radioTipo.checked = true
+      if (plantilla.objetivo) document.getElementById('objetivo').value = plantilla.objetivo
+
+      const dias = await obtenerDiasDeRutina(plantilla.id)
+      cargarDiasEnFormulario(dias)
     }
 
     document.getElementById('formRutina').addEventListener('submit', async (e) => {
@@ -754,40 +921,76 @@
 
       const btn = document.getElementById('btnGuardarRutina')
       btn.disabled = true
-      btn.textContent = 'GUARDANDO...'
+      btn.textContent = rutinaEditandoId ? 'GUARDANDO CAMBIOS...' : 'GUARDANDO...'
 
       try {
-        // 1) Desactivar cualquier rutina anterior que siguiera activa
-        await db
-          .from('rutinas')
-          .update({ activa: false })
-          .eq('socio_id', socioActual.id)
-          .eq('activa', true)
+        let rutinaId = rutinaEditandoId
 
-        // 2) Crear la rutina nueva
-        const { data: rutinaCreada, error: errorRutina } = await db
-          .from('rutinas')
-          .insert({
-            socio_id: socioActual.id,
-            nombre: nombreRutina,
-            tipo_plan: tipoPlan,
-            objetivo: objetivo || null,
-            entrenador: entrenador || null,
-            fecha_inicio: fechaInicio,
-            peso_kg: pesoActual || null,
-            activa: true
-          })
-          .select()
-          .single()
+        if (rutinaEditandoId) {
+          // MODO EDICIÓN: actualizamos la rutina existente en vez de crear otra.
+          const { error: errorUpdate } = await db
+            .from('rutinas')
+            .update({
+              nombre: nombreRutina,
+              tipo_plan: tipoPlan,
+              objetivo: objetivo || null,
+              entrenador: entrenador || null,
+              fecha_inicio: fechaInicio,
+              peso_kg: pesoActual || null
+            })
+            .eq('id', rutinaEditandoId)
 
-        if (errorRutina) throw errorRutina
+          if (errorUpdate) throw errorUpdate
 
-        // 3) Crear cada día y sus ejercicios
+          // Borramos los días y ejercicios viejos para reemplazarlos por los
+          // que quedaron en el formulario ahora.
+          const { data: diasViejos } = await db
+            .from('rutina_dias')
+            .select('id')
+            .eq('rutina_id', rutinaEditandoId)
+
+          const idsDiasViejos = (diasViejos || []).map(d => d.id)
+
+          if (idsDiasViejos.length > 0) {
+            await db.from('rutina_ejercicios').delete().in('dia_id', idsDiasViejos)
+            await db.from('rutina_dias').delete().eq('rutina_id', rutinaEditandoId)
+          }
+
+        } else {
+          // MODO CREACIÓN: desactivamos cualquier rutina anterior que
+          // siguiera activa, y creamos la nueva.
+          await db
+            .from('rutinas')
+            .update({ activa: false })
+            .eq('socio_id', socioActual.id)
+            .eq('activa', true)
+
+          const { data: rutinaCreada, error: errorRutina } = await db
+            .from('rutinas')
+            .insert({
+              socio_id: socioActual.id,
+              nombre: nombreRutina,
+              tipo_plan: tipoPlan,
+              objetivo: objetivo || null,
+              entrenador: entrenador || null,
+              fecha_inicio: fechaInicio,
+              peso_kg: pesoActual || null,
+              activa: true
+            })
+            .select()
+            .single()
+
+          if (errorRutina) throw errorRutina
+          rutinaId = rutinaCreada.id
+        }
+
+        // Creamos cada día y sus ejercicios (esto es igual para crear o editar,
+        // porque en edición ya borramos los días viejos arriba)
         for (let i = 0; i < dias.length; i++) {
           const { data: diaCreado, error: errorDia } = await db
             .from('rutina_dias')
             .insert({
-              rutina_id: rutinaCreada.id,
+              rutina_id: rutinaId,
               numero_dia: i + 1,
               nombre_dia: dias[i].nombreDia
             })
@@ -815,15 +1018,19 @@
           }
         }
 
-        mostrarMensaje('mensajeRutina', 'Rutina guardada correctamente. Ya está disponible en el link del socio.', 'exito')
+        mostrarMensaje('mensajeRutina', rutinaEditandoId
+          ? 'Cambios guardados correctamente.'
+          : 'Rutina guardada correctamente. Ya está disponible en el link del socio.', 'exito')
+
         await cargarHistorial()
+        if (rutinaEditandoId) prepararFormularioNuevo()
 
       } catch (err) {
         mostrarMensaje('mensajeRutina', 'Error al guardar la rutina: ' + err.message, 'error')
       }
 
       btn.disabled = false
-      btn.textContent = 'GUARDAR RUTINA'
+      btn.textContent = rutinaEditandoId ? 'GUARDAR CAMBIOS' : 'GUARDAR RUTINA'
     })
   </script>
 </body>
