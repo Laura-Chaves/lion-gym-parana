@@ -172,8 +172,14 @@
       letter-spacing: 0.5px;
     }
 
+    .tabla-scroll {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
     table.tabla-ejercicios {
       width: 100%;
+      min-width: 460px;
       border-collapse: collapse;
     }
 
@@ -185,6 +191,7 @@
       letter-spacing: 0.5px;
       text-align: left;
       padding: 0.7rem 1rem;
+      white-space: nowrap;
     }
 
     table.tabla-ejercicios td {
@@ -235,8 +242,15 @@
       .datos-grid { grid-template-columns: 1fr; }
       .encabezado-top { flex-direction: column; align-items: flex-start; }
       .titulo-plan { text-align: left; }
-      table.tabla-ejercicios th:nth-child(4),
-      table.tabla-ejercicios td:nth-child(4) { display: none; }
+      table.tabla-ejercicios { min-width: 420px; }
+      table.tabla-ejercicios th, table.tabla-ejercicios td {
+        padding: 0.6rem 0.7rem;
+        font-size: 0.82rem;
+      }
+    }
+
+    @media (max-width: 400px) {
+      table.tabla-ejercicios { min-width: 380px; }
     }
 
     .btn-descargar {
@@ -293,6 +307,8 @@
       .combo-etiqueta { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       table.tabla-ejercicios th { background: #eee; color: #333; }
       table.tabla-ejercicios td { color: #111; border-color: #ddd; }
+      .tabla-scroll { overflow-x: visible; }
+      table.tabla-ejercicios { min-width: 0; width: 100%; }
       .dato-fila, .dato-fila strong { color: #111; }
       .tipo-plan-tag { color: #999; border-color: #ccc; }
       .tipo-plan-tag.activo { color: #cc0000; border-color: #cc0000; }
@@ -493,7 +509,7 @@
     }
 
     function renderizarTablaEjercicios(ejercicios, etiquetas, esCombo) {
-      let html = `<table class="tabla-ejercicios" style="${esCombo ? 'border-left:4px solid #cc0000;' : ''}">
+      let html = `<div class="tabla-scroll"><table class="tabla-ejercicios" style="${esCombo ? 'border-left:4px solid #cc0000;' : ''}">
         <thead>
           <tr><th></th><th>Ejercicio</th><th>Series</th><th>Reps por serie</th><th>Peso</th></tr>
         </thead>
@@ -507,7 +523,7 @@
           <td>${renderizarChips(ej.peso_kg)}</td>
         </tr>`
       })
-      html += `</tbody></table>`
+      html += `</tbody></table></div>`
       return html
     }
 
