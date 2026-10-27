@@ -582,10 +582,13 @@
         }
       }
 
-      // Nota: setMonth desborda a fin de mes (31/01 + 1 mes = 03/03).
-      // Se mantiene igual que el sistema actual hasta definir ese caso.
-      const vencimiento = new Date(fechaUltimoPago)
-      vencimiento.setMonth(vencimiento.getMonth() + 1)
+      // + 1 mes; si el mes siguiente es más corto, cae en su último día
+      // (31/01 → 28/02). Igual que la vista v_socios_estado (migración 003).
+      // fecha_pago viene sin zona horaria y está en UTC: se lee como UTC
+      const textoPago = String(fechaUltimoPago)
+      const pago = new Date(/[zZ]$|[+-]\d\d:?\d\d$/.test(textoPago) || textoPago.length <= 10 ? textoPago : textoPago + 'Z')
+      const ultimoDiaMesSiguiente = new Date(pago.getFullYear(), pago.getMonth() + 2, 0).getDate()
+      const vencimiento = new Date(pago.getFullYear(), pago.getMonth() + 1, Math.min(pago.getDate(), ultimoDiaMesSiguiente))
 
       const hoy0 = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate())
       const venc0 = new Date(vencimiento.getFullYear(), vencimiento.getMonth(), vencimiento.getDate())
