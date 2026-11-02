@@ -431,6 +431,27 @@
     }
 
     .btn-listo:hover { background: #2c2628; }
+
+    .btn-rutina {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+      width: 100%;
+      height: 56px;
+      margin-top: 1.25rem;
+      border-radius: var(--radio);
+      background: var(--rojo);
+      color: #fff;
+      text-decoration: none;
+      font-family: var(--f-titulo);
+      font-weight: 600;
+      font-size: 1.4rem;
+      transition: background var(--transicion);
+    }
+
+    .btn-rutina:hover { background: var(--rojo-hover); }
+    .btn-rutina + .btn-listo { margin-top: 0.6rem; }
     .btn-listo-texto { position: relative; z-index: 1; }
 
     .cuenta {
@@ -673,7 +694,10 @@
     // siguiente socio empieza a escribir su DNI, se vuelve directo.
     document.addEventListener('keydown', e => {
       if (resultado.classList.contains('oculto')) return
-      if (e.key === 'Enter' || e.key === 'Escape') {
+      if ((e.key === 'r' || e.key === 'R') && document.getElementById('btnRutina')) {
+        e.preventDefault()
+        document.getElementById('btnRutina').click()
+      } else if (e.key === 'Enter' || e.key === 'Escape') {
         e.preventDefault()
         volverAlInicio()
       } else if (/^[0-9]$/.test(e.key)) {
@@ -756,7 +780,17 @@
           return
         }
 
-        mostrarSocio({ socio, membresia, cuota, ahora, ultimoIngresoHoy })
+        let tieneRutina = false
+        try {
+          const { data: rutinas } = await db
+            .from('rutinas')
+            .select('id')
+            .eq('socio_id', socio.id)
+            .limit(1)
+          tieneRutina = !!(rutinas && rutinas.length)
+        } catch {}
+
+        mostrarSocio({ socio, membresia, cuota, ahora, ultimoIngresoHoy, tieneRutina })
 
       } catch (err) {
         console.error(err)
@@ -853,7 +887,7 @@
       return ''
     }
 
-    function mostrarSocio({ socio, membresia, cuota, ahora, ultimoIngresoHoy }) {
+    function mostrarSocio({ socio, membresia, cuota, ahora, ultimoIngresoHoy, tieneRutina }) {
       const estado = bloqueEstado(membresia, cuota)
 
       const aviso = ultimoIngresoHoy
@@ -874,6 +908,12 @@
           <div class="res-der">
             <div class="datos">${filasDatos(membresia, cuota)}</div>
             ${notaCuota(membresia, cuota)}
+            ${tieneRutina ? `
+            <a class="btn-rutina" id="btnRutina" href="ver-rutina.html?socio=${encodeURIComponent(socio.id)}&desde=recepcion" target="lion-rutina">
+              <svg class="icono" width="22" height="22" viewBox="0 0 24 24"><path d="M6.5 6v12M17.5 6v12M3.5 9v6M20.5 9v6M6.5 12h11"/></svg>
+              Ver mi rutina
+              <svg class="icono" width="16" height="16" viewBox="0 0 24 24" style="opacity:.75"><path d="M14 4.5h5.5V10M19.5 4.5 11 13M17 14v4.5a1 1 0 0 1-1 1H5.5a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1H10"/></svg>
+            </a>` : ''}
             ${botonListo()}
           </div>
         </div>
@@ -914,9 +954,29 @@
       cuenta.style.animationDuration = `${segundos}s`
       cuenta.classList.add('corriendo')
       document.getElementById('btnListo').addEventListener('click', () => volverAlInicio())
+      const btnRutina = document.getElementById('btnRutina')
+      if (btnRutina) btnRutina.addEventListener('click', e => {
+        e.preventDefault()
+        abrirRutina(btnRutina.href)
+      })
 
       clearTimeout(temporizador)
       temporizador = setTimeout(() => volverAlInicio(), segundos * 1000)
+    }
+
+    // La rutina se abre siempre en la misma pestaña aparte ("lion-rutina"):
+    // si otro socio abre la suya, reemplaza a la anterior y no se acumulan.
+    // Recepción vuelve enseguida a la pantalla de DNI.
+    function abrirRutina(url) {
+      const ventana = window.open(url, 'lion-rutina')
+      if (ventana) {
+        try { ventana.opener = null } catch {}
+        ventana.focus()
+        volverAlInicio()
+      } else {
+        // Si el navegador bloquea pestañas nuevas, se abre acá mismo
+        location.replace(url)
+      }
     }
 
     function volverAlInicio(primerDigito = '') {
