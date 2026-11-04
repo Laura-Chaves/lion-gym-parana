@@ -399,6 +399,83 @@
     }
 
     .form-acciones .btn-guardar { background: var(--rojo); border-color: var(--rojo); color: #fff; }
+
+    /* Nombre visible (Gym Levels) */
+    .apodo {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.35rem 0.6rem;
+      margin-top: 0.8rem;
+      padding: 0.7rem 0.9rem;
+      border-radius: var(--radio);
+      border: 1px solid var(--linea);
+      background: rgba(255, 255, 255, 0.03);
+      font-size: 0.95rem;
+      color: var(--texto-2);
+    }
+
+    .apodo .icono { color: var(--texto-3); flex: none; }
+    .apodo strong { color: var(--texto); font-weight: 600; }
+
+    .apodo-ranking {
+      margin-left: auto;
+      padding: 0.1rem 0.6rem;
+      border-radius: 99px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--texto-2);
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .apodo-ranking.visible { color: #f0c75e; background: rgba(224, 176, 67, 0.12); }
+
+    .campo-ancho { grid-column: 1 / -1; }
+
+    .ayuda-campo {
+      display: block;
+      margin-top: 0.35rem;
+      font-size: 0.8rem;
+      color: var(--texto-3);
+    }
+
+    .interruptor {
+      display: flex !important;
+      align-items: center;
+      gap: 0.7rem;
+      cursor: pointer;
+      font-size: 0.95rem !important;
+      color: var(--texto) !important;
+    }
+
+    .interruptor input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+
+    .interruptor-pista {
+      position: relative;
+      flex: none;
+      width: 44px;
+      height: 26px;
+      border-radius: 99px;
+      background: var(--elevada);
+      border: 1px solid var(--linea);
+      transition: background var(--transicion), border-color var(--transicion);
+    }
+
+    .interruptor-pista::after {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--texto-2);
+      transition: transform var(--transicion), background var(--transicion);
+    }
+
+    .interruptor input:checked + .interruptor-pista { background: var(--rojo); border-color: var(--rojo); }
+    .interruptor input:checked + .interruptor-pista::after { transform: translateX(18px); background: #fff; }
+    .interruptor input:focus-visible + .interruptor-pista { outline: 2px solid var(--rojo-texto); outline-offset: 2px; }
     .form-error { grid-column: 1 / -1; color: var(--rojo-texto); font-size: 0.9rem; }
 
     /* ============================================================
@@ -791,8 +868,7 @@
     .dia-numero { white-space: nowrap; flex-shrink: 0; }
     .btn-registrar .icono { width: 15px; height: 15px; }
     .dia-encabezado .btn-registrar + .dia-cantidad { margin-left: 0.75rem; }
-    body.sin-cargas .btn-registrar,
-    body.sin-cargas .pestanas { display: none; }
+    body.sin-cargas .btn-registrar { display: none; }
 
     /* ============================================================
        HOJA DE REGISTRO (pantalla completa en celular)
@@ -1386,9 +1462,456 @@
 
     .kiosco-caja button + button { margin-top: 0.5rem; background: var(--elevada); color: var(--texto-2); }
 
+    /* ============================================================
+       MI NIVEL (Gym Levels, migraciones 006 y 008)
+       ============================================================ */
+    body:not(.viendo-nivel) .nivel-gl { display: none; }
+    body.viendo-nivel .dias-nav,
+    body.viendo-nivel .dias,
+    body.viendo-nivel .btn-pdf { display: none; }
+    body.sin-cargas .pestanas [data-vista="progreso"],
+    body.sin-gl .pestanas [data-vista="nivel"] { display: none; }
+    body.sin-cargas.sin-gl .pestanas { display: none; }
+
+    .nivel-gl { padding-top: 1.5rem; padding-bottom: 3rem; }
+
+    .nivel-bronce   { --n-claro: #e7ab74; --n-medio: #b8733a; --n-oscuro: #6e3c18; }
+    .nivel-plata    { --n-claro: #f4f6f9; --n-medio: #b9bfc7; --n-oscuro: #69707a; }
+    .nivel-oro      { --n-claro: #ffe594; --n-medio: #e0b043; --n-oscuro: #8c6417; }
+    .nivel-diamante { --n-claro: #d2f5ff; --n-medio: #63c3ef; --n-oscuro: #1f5f9e; }
+
+    .escudo, .medalla { flex: none; display: block; }
+
+    /* Encabezado del nivel */
+    .nv-hero {
+      position: relative;
+      margin-top: 1.25rem;
+      padding: 1.4rem 1.5rem 1.25rem;
+      border-radius: 12px;
+      border: 1px solid var(--linea);
+      background:
+        radial-gradient(ellipse 55% 90% at 0% 0%, color-mix(in srgb, var(--n-medio) 16%, transparent), transparent 70%),
+        linear-gradient(160deg, var(--elevada), var(--superficie) 70%);
+      overflow: hidden;
+    }
+
+    .nv-hero::before {
+      content: '';
+      position: absolute;
+      left: 0; right: 0; top: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--n-oscuro), var(--n-claro), var(--n-medio));
+    }
+
+    .nv-top { display: flex; align-items: center; gap: 1.1rem; }
+    .nv-top .escudo { filter: drop-shadow(0 6px 14px rgba(0,0,0,0.5)); }
+    .nv-nivel { flex: 1; min-width: 0; }
+
+    .nv-etiqueta {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--texto-3);
+    }
+
+    .nv-nombre {
+      font-family: var(--f-titulo);
+      font-weight: 700;
+      font-size: clamp(2.4rem, 7vw, 3.3rem);
+      line-height: 0.95;
+      letter-spacing: 0.04em;
+      background: linear-gradient(180deg, var(--n-claro) 20%, var(--n-medio) 90%);
+      -webkit-background-clip: text;
+              background-clip: text;
+      color: transparent;
+    }
+
+    .nv-dias { text-align: right; flex: none; }
+
+    .nv-num {
+      display: block;
+      font-family: var(--f-titulo);
+      font-weight: 700;
+      font-size: clamp(2.8rem, 8vw, 3.8rem);
+      line-height: 0.9;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .nv-dias-texto { font-size: 0.85rem; color: var(--texto-2); }
+
+    .nv-pista {
+      position: relative;
+      height: 10px;
+      margin-top: 1.3rem;
+      border-radius: 99px;
+      background: rgba(255,255,255,0.07);
+    }
+
+    .nv-relleno {
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--n-oscuro), var(--n-medio) 60%, var(--n-claro));
+      box-shadow: 0 0 14px color-mix(in srgb, var(--n-medio) 55%, transparent);
+      transform-origin: left;
+      animation: nvLlenar 900ms 120ms cubic-bezier(.2,.8,.2,1) both;
+    }
+
+    @keyframes nvLlenar { from { transform: scaleX(0); } }
+
+    .nv-hito {
+      position: absolute;
+      top: -3px;
+      width: 2px;
+      height: 16px;
+      margin-left: -1px;
+      background: var(--fondo);
+    }
+
+    .nv-hitos {
+      position: relative;
+      height: 1.2rem;
+      margin-top: 0.35rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--texto-3);
+    }
+
+    .nv-hitos span {
+      position: absolute;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      transform: translateX(-50%);
+      white-space: nowrap;
+    }
+
+    .nv-hitos span:last-child { transform: translateX(-100%); }
+
+    .nv-hitos span::before {
+      content: '';
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--n-medio);
+      opacity: 0.5;
+    }
+
+    .nv-hitos span.logrado { color: var(--texto-2); }
+    .nv-hitos b { font-weight: inherit; }
+    .nv-hitos span.logrado::before { opacity: 1; }
+
+    .nv-meta { margin-top: 0.45rem; font-size: 1rem; color: var(--texto-2); }
+    .nv-meta strong { color: var(--texto); font-weight: 600; }
+
+    /* Números */
+    .nv-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.6rem;
+      margin-top: 0.75rem;
+    }
+
+    .nv-stat {
+      padding: 0.85rem 0.95rem;
+      border-radius: 10px;
+      background: var(--superficie);
+      border: 1px solid var(--linea);
+    }
+
+    .nv-stat-nombre { font-size: 0.8rem; color: var(--texto-3); }
+
+    .nv-stat-valor {
+      font-family: var(--f-titulo);
+      font-weight: 700;
+      font-size: 2rem;
+      line-height: 1.05;
+      margin-top: 0.1rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .nv-stat-valor small { font-family: var(--f-texto); font-size: 0.85rem; font-weight: 500; color: var(--texto-2); margin-left: 0.2rem; }
+    .nv-stat-extra { font-size: 0.78rem; color: var(--texto-3); margin-top: 0.1rem; line-height: 1.3; }
+
+    /* Insignias */
+    .nv-insignias {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 0.6rem;
+    }
+
+    .nv-insignia {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 0.35rem;
+      padding: 0.9rem 0.6rem 0.8rem;
+      border-radius: 10px;
+      border: 1px solid var(--linea);
+      background: rgba(255,255,255,0.02);
+    }
+
+    .nv-insignia.ganada {
+      border-color: rgba(224, 176, 67, 0.4);
+      background: radial-gradient(ellipse 80% 70% at 50% 0%, rgba(224, 176, 67, 0.12), transparent 75%), rgba(255,255,255,0.02);
+    }
+
+    .nv-insignia:not(.ganada) .medalla { filter: grayscale(1); opacity: 0.38; }
+    .nv-insignia-nombre { font-weight: 600; font-size: 0.95rem; line-height: 1.2; }
+    .nv-insignia:not(.ganada) .nv-insignia-nombre { color: var(--texto-2); }
+    .nv-insignia-desc { font-size: 0.78rem; color: var(--texto-3); line-height: 1.3; }
+    .nv-insignia-fecha { font-size: 0.78rem; font-weight: 600; color: #f0c75e; }
+
+    .nv-contador {
+      flex: none;
+      font-family: var(--f-titulo);
+      font-weight: 700;
+      font-size: 1.5rem;
+      line-height: 1;
+    }
+
+    .nv-contador small { font-family: var(--f-texto); font-size: 0.85rem; font-weight: 500; color: var(--texto-3); }
+
+    /* Historial de 12 meses */
+    .nv-historial {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      align-items: end;
+      gap: 0.35rem;
+      height: 190px;
+      padding-top: 1.4rem;
+      padding-right: 4.2rem; /* espacio para los nombres de las líneas guía */
+    }
+
+    .nv-guia {
+      position: absolute;
+      left: 0; right: 0;
+      border-top: 1px dashed var(--linea);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .nv-guia span {
+      position: absolute;
+      right: 0;
+      text-align: right;
+      top: -0.5rem;
+      width: 3.9rem;
+      line-height: 1;
+      font-size: 0.66rem;
+      font-weight: 600;
+      color: var(--texto-3);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .nv-mes {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: center;
+      height: 100%;
+      min-width: 0;
+    }
+
+    .nv-mes-barra {
+      width: 100%;
+      max-width: 34px;
+      min-height: 3px;
+      border-radius: 4px 4px 1px 1px;
+      background: linear-gradient(180deg, var(--n-claro), var(--n-medio) 45%, var(--n-oscuro));
+    }
+
+    .nv-mes.vacio .nv-mes-barra { background: rgba(255,255,255,0.08); }
+    .nv-mes.actual .nv-mes-barra { box-shadow: 0 0 0 2px var(--fondo), 0 0 0 3px var(--n-medio); }
+
+    .nv-mes-valor {
+      height: 1.3rem;
+      font-family: var(--f-titulo);
+      font-weight: 700;
+      font-size: 0.95rem;
+      line-height: 1.3;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .nv-mes.vacio .nv-mes-valor { color: var(--texto-3); }
+
+    .nv-meses {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      padding-right: 4.2rem;
+      gap: 0.35rem;
+      margin-top: 0.4rem;
+      font-size: 0.72rem;
+      color: var(--texto-3);
+      text-align: center;
+      text-transform: capitalize;
+    }
+
+    .nv-meses .actual { color: var(--texto); font-weight: 600; }
+
+    /* Ranking */
+    .nv-select {
+      height: 36px;
+      padding: 0 0.7rem;
+      font: inherit;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--texto);
+      background: var(--fondo);
+      border: 1px solid var(--linea);
+      border-radius: var(--radio);
+      color-scheme: dark;
+    }
+
+    .nv-ranking { list-style: none; }
+
+    .nv-fila {
+      display: grid;
+      grid-template-columns: 2.4rem 1fr auto auto;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.6rem 0.5rem;
+      border-bottom: 1px solid var(--linea-suave, var(--linea));
+    }
+
+    .nv-fila:last-child { border-bottom: none; }
+
+    .nv-fila.vos {
+      border-radius: 8px;
+      border-bottom-color: transparent;
+      background: rgba(204, 0, 0, 0.12);
+      box-shadow: inset 3px 0 0 var(--rojo);
+    }
+
+    .nv-puesto {
+      display: grid;
+      place-items: center;
+      width: 2.1rem;
+      height: 2.1rem;
+      border-radius: 50%;
+      font-family: var(--f-titulo);
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--texto-2);
+    }
+
+    .nv-puesto.p1, .nv-puesto.p2, .nv-puesto.p3 {
+      color: #1b1819;
+      background: radial-gradient(circle at 35% 30%, var(--n-claro), var(--n-medio) 55%, var(--n-oscuro));
+      box-shadow: 0 2px 6px rgba(0,0,0,0.45);
+    }
+
+    .nv-fila-nombre { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .nv-fila-nombre em { font-style: normal; font-size: 0.78rem; font-weight: 600; color: var(--rojo-texto); margin-left: 0.35rem; }
+
+    .nv-fila-nivel {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.8rem;
+      color: var(--texto-2);
+    }
+
+    .nv-fila-dias {
+      min-width: 3.6rem;
+      text-align: right;
+      font-family: var(--f-titulo);
+      font-weight: 700;
+      font-size: 1.3rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .nv-fila-dias small { font-family: var(--f-texto); font-size: 0.75rem; font-weight: 500; color: var(--texto-3); margin-left: 0.2rem; }
+
+    .nv-separador { text-align: center; color: var(--texto-3); letter-spacing: 0.3em; padding: 0.15rem 0; }
+
+    .nv-nota { margin-top: 0.75rem; font-size: 0.85rem; color: var(--texto-3); }
+    .nv-nota button { border: none; background: none; color: var(--rojo-texto); font: inherit; font-weight: 600; cursor: pointer; padding: 0; }
+
+    /* Puntos */
+    .nv-movs { list-style: none; }
+
+    .nv-mov {
+      display: grid;
+      grid-template-columns: 4.2rem 1fr auto;
+      gap: 0.75rem;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--linea-suave, var(--linea));
+      font-size: 0.92rem;
+    }
+
+    .nv-mov:last-child { border-bottom: none; }
+    .nv-mov-fecha { color: var(--texto-3); font-variant-numeric: tabular-nums; }
+    .nv-mov-pts { font-weight: 700; color: #f0c75e; font-variant-numeric: tabular-nums; }
+
+    /* Cómo funciona */
+    .nv-reglas summary {
+      cursor: pointer;
+      font-family: var(--f-titulo);
+      font-weight: 600;
+      font-size: 1.25rem;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nv-reglas summary::-webkit-details-marker { display: none; }
+    .nv-reglas summary::after { content: '+'; font-family: var(--f-texto); font-size: 1.4rem; color: var(--texto-3); }
+    .nv-reglas[open] summary::after { content: '−'; }
+
+    .nv-reglas-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin-top: 1rem;
+    }
+
+    .nv-reglas h4 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--texto-3); margin-bottom: 0.4rem; }
+    .nv-regla { display: flex; justify-content: space-between; gap: 1rem; padding: 0.35rem 0; font-size: 0.92rem; border-bottom: 1px solid var(--linea-suave, var(--linea)); }
+    .nv-regla:last-child { border-bottom: none; }
+    .nv-regla strong { white-space: nowrap; }
+    .nv-regla .nivel-chip { display: inline-flex; align-items: center; gap: 0.4rem; }
+
+    @media (max-width: 640px) {
+      .nv-hero { padding: 1.15rem 1rem 1.05rem; }
+      .nv-top { gap: 0.8rem; }
+      .nv-top { flex-wrap: wrap; }
+      .nv-top .escudo { width: 64px; height: 72px; }
+      .nv-etiqueta { font-size: 0.68rem; letter-spacing: 0.1em; }
+      .nv-nombre { font-size: 2.3rem; }
+      .nv-dias { flex-basis: 100%; display: flex; align-items: baseline; gap: 0.45rem; text-align: left; margin-top: 0.2rem; }
+      .nv-num { display: inline; font-size: 2.4rem; }
+      .nv-hitos b { display: none; }
+      .nv-stats { grid-template-columns: 1fr 1fr; }
+      .nv-stat-valor { font-size: 1.7rem; }
+      .nv-insignias { grid-template-columns: 1fr 1fr; }
+      .nv-historial { gap: 0.2rem; height: 160px; padding-right: 3.3rem; }
+      .nv-meses { gap: 0.2rem; font-size: 0.66rem; padding-right: 3.3rem; }
+      .nv-guia span { width: 3.1rem; font-size: 0.6rem; letter-spacing: 0.02em; }
+      .nv-mes-valor { font-size: 0.8rem; }
+      .nv-fila { grid-template-columns: 2.2rem minmax(0, 1fr) auto auto; gap: 0.6rem; padding-left: 0.3rem; padding-right: 0.3rem; }
+      .nv-fila-nivel span { display: none; }
+      .nv-reglas-grid { grid-template-columns: 1fr; }
+    }
+
+    /* En celular, las pestañas van en su propia fila y los días abajo */
+    @media (max-width: 640px) {
+      .acciones .contenedor { flex-wrap: wrap; row-gap: 0.55rem; }
+      .pestanas { width: 100%; }
+      .pestanas button { flex: 1; padding: 0 0.4rem; }
+    }
+
     @media print {
       .btn-salir-kiosco, .kiosco-velo { display: none !important; }
-      .pestanas, .btn-registrar, .progreso, .hoja-velo, .aviso { display: none !important; }
+      .pestanas, .btn-registrar, .progreso, .nivel-gl, .hoja-velo, .aviso { display: none !important; }
+      body.viendo-nivel .dias { display: block !important; }
       body.viendo-progreso .dias { display: block !important; }
     }
 
@@ -1579,12 +2102,28 @@
           <div class="metricas" id="metricas"></div>
           <p class="nota-imc" id="notaImc"></p>
 
+          <!-- Gym Levels: cómo aparece en Recepción y en el ranking -->
+          <div class="apodo oculto" id="apodo">
+            <svg class="icono" width="18" height="18" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.75"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/></svg>
+            <span>Aparecés como <strong id="apodoNombre"></strong></span>
+            <span class="apodo-ranking" id="apodoRanking"></span>
+          </div>
+
           <form class="form-datos oculto" id="formDatos" novalidate>
             <label>Altura (cm)
               <input type="number" id="inAltura" inputmode="numeric" min="100" max="250" placeholder="Ej: 172">
             </label>
             <label>Peso (kg)
               <input type="number" id="inPeso" inputmode="decimal" step="0.1" min="20" max="300" placeholder="Ej: 78,5">
+            </label>
+            <label class="campo-ancho gl-campo oculto">Nombre o apodo
+              <input type="text" id="inApodo" maxlength="20" autocomplete="off" autocapitalize="words">
+              <span class="ayuda-campo">Así te saluda Recepción y aparecés en el ranking del mes. Si lo dejás vacío, usamos tu nombre.</span>
+            </label>
+            <label class="interruptor campo-ancho gl-campo oculto">
+              <input type="checkbox" id="inRanking" role="switch">
+              <span class="interruptor-pista" aria-hidden="true"></span>
+              <span>Aparecer en el ranking del mes</span>
             </label>
             <p class="form-error oculto" id="errorDatos"></p>
             <div class="form-acciones">
@@ -1608,6 +2147,7 @@
         <div class="pestanas" role="tablist" aria-label="Vista">
           <button type="button" data-vista="rutina" class="activa" aria-selected="true">Rutina</button>
           <button type="button" data-vista="progreso" aria-selected="false">Mi progreso</button>
+          <button type="button" data-vista="nivel" aria-selected="false">Mi nivel</button>
         </div>
         <div class="dias-nav" id="diasNav"></div>
         <button class="btn-pdf" type="button" id="btnPdf" aria-label="Descargar o imprimir en PDF">
@@ -1619,6 +2159,7 @@
 
     <main class="contenedor dias" id="dias"></main>
     <main class="contenedor progreso" id="progreso" aria-live="polite"></main>
+    <main class="contenedor nivel-gl" id="nivelGl" aria-live="polite"></main>
 
     <footer class="pie">
       <div class="contenedor">
@@ -1677,8 +2218,7 @@
         // Primero la vigente; si ninguna está marcada, la más reciente
         const inicial = rutinas.find(r => r.activa) || rutinas[0]
 
-        await cargarPerfil()
-        await cargarCargas()
+        await Promise.all([cargarPerfil(), cargarCargas(), cargarGymLevels()])
         armarSelector()
         await mostrarRutina(inicial.id)
 
@@ -2007,9 +2547,383 @@
           ? 'El IMC es una referencia general. En personas que entrenan fuerza puede salir alto por la masa muscular.'
           : 'Cargá tu altura y tu peso para ver tu IMC.'
 
-      btnEditarDatos.classList.toggle('oculto', !perfilDisponible)
+      // Nombre visible (Gym Levels, migración 006)
+      document.querySelectorAll('.gl-campo').forEach(c => c.classList.toggle('oculto', !glPerfil))
+      document.getElementById('apodo').classList.toggle('oculto', !glPerfil || !formDatos.classList.contains('oculto'))
+      if (glPerfil) {
+        document.getElementById('apodoNombre').textContent = glPerfil.nombre
+        const r = document.getElementById('apodoRanking')
+        r.textContent = glPerfil.oculto_ranking ? 'Oculto del ranking' : 'En el ranking'
+        r.classList.toggle('visible', !glPerfil.oculto_ranking)
+      }
+
+      const editable = perfilDisponible || !!glPerfil
+      btnEditarDatos.classList.toggle('oculto', !editable || !formDatos.classList.contains('oculto'))
       document.querySelector('.nota-privada').classList.toggle('oculto', !perfilDisponible)
     }
+
+    /* ============================================================
+       GYM LEVELS (migración 006): nombre visible y ranking.
+       Sin la migración, esta parte simplemente no aparece.
+       ============================================================ */
+    let glPerfil = null   // respuesta de gym_levels_perfil
+
+    async function cargarGymLevels() {
+      try {
+        const { data, error } = await db.rpc('gym_levels_perfil', { p_socio: socio.id })
+        glPerfil = !error && data && !data.excluido ? data : null
+      } catch {
+        glPerfil = null
+      }
+      document.body.classList.toggle('sin-gl', !glPerfil)
+      if (glPerfil) renderizarNivel()
+    }
+
+    // Lo que se muestra si no elige apodo: "Juan P."
+    function nombrePorDefecto() {
+      const p = (socio.nombre || '').trim().split(/\s+/)
+      const cap = t => t.charAt(0).toUpperCase() + t.slice(1).toLowerCase()
+      return cap(p[0] || '') + (p.length > 1 ? ` ${p[p.length - 1][0].toUpperCase()}.` : '')
+    }
+
+    /* ============================================================
+       MI NIVEL — pestaña de Gym Levels del alumno
+       Usa gym_levels_perfil (006 + reglas de 008) y gym_levels_ranking.
+       Los dibujos (escudo, medallas) son los mismos de Recepción.
+       ============================================================ */
+    const NIVELES = {
+      bronce:   { nombre: 'Bronce',   claro: '#e7ab74', medio: '#b8733a', oscuro: '#6e3c18' },
+      plata:    { nombre: 'Plata',    claro: '#f4f6f9', medio: '#b9bfc7', oscuro: '#69707a' },
+      oro:      { nombre: 'Oro',      claro: '#ffe594', medio: '#e0b043', oscuro: '#8c6417' },
+      diamante: { nombre: 'Diamante', claro: '#d2f5ff', medio: '#63c3ef', oscuro: '#1f5f9e' }
+    }
+    const MEDALLAS_PUESTO = { 1: 'oro', 2: 'plata', 3: 'bronce' }
+    const MESES_LARGOS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
+    let idSvg = 0
+
+    // Escudo metálico con galones: 1 Bronce, 2 Plata, 3 Oro, gema Diamante
+    function escudoNivel(nivel, tam = 64) {
+      const n = NIVELES[nivel] || NIVELES.bronce
+      const id = 'esc-' + (++idSvg)
+      const galon = y => `<path d="M20 ${y} 32 ${y + 7} 44 ${y}" fill="none" stroke="${n.oscuro}" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/>`
+      const marcas = {
+        bronce:   galon(33),
+        plata:    galon(28) + galon(38),
+        oro:      galon(23) + galon(33) + galon(43),
+        diamante: `<path d="M23 27h18l5 7-14 16-14-16z" fill="${n.claro}" stroke="${n.oscuro}" stroke-width="2.2" stroke-linejoin="round"/>
+                   <path d="M18 34h28M27 27l-2 7 7 16 7-16-2-7" fill="none" stroke="${n.oscuro}" stroke-width="1.6" stroke-linejoin="round"/>`
+      }
+      return `
+        <svg class="escudo" width="${tam}" height="${Math.round(tam * 1.125)}" viewBox="0 0 64 72" aria-hidden="true">
+          <defs>
+            <linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="${n.claro}"/><stop offset=".55" stop-color="${n.medio}"/><stop offset="1" stop-color="${n.oscuro}"/>
+            </linearGradient>
+          </defs>
+          <path d="M32 3 58 12v24c0 16-12 27-26 33C18 63 6 52 6 36V12z" fill="url(#${id})" stroke="${n.oscuro}" stroke-width="1.5"/>
+          <path d="M32 9.5 52.5 16.5v19.5c0 12.5-9 21.5-20.5 26.5-11.5-5-20.5-14-20.5-26.5V16.5z" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="1.2"/>
+          <path d="M32 3 58 12v8L6 44V12z" fill="rgba(255,255,255,.14)"/>
+          ${marcas[nivel] || marcas.bronce}
+        </svg>`
+    }
+
+    const ICONOS_INSIGNIA = {
+      primer_paso: '<path d="M6.5 21V3.5M6.5 4h11l-2.2 4 2.2 4h-11"/>',
+      constancia:  '<rect x="4" y="5.5" width="16" height="14.5" rx="1.5"/><path d="M4 10h16M8 3.5v4M16 3.5v4M9 15l2 2 4-4"/>',
+      imparable:   '<path d="M13 2.5 5.5 13.5H12l-1 8 7.5-11H12z"/>',
+      hierro:      '<path d="M6.5 6v12M17.5 6v12M3.5 9v6M20.5 9v6M6.5 12h11"/>',
+      diamante:    '<path d="M6 4h12l3.5 5L12 20.5 2.5 9zM2.5 9h19M9 4 7.5 9 12 20.5 16.5 9 15 4"/>',
+      elite:       '<path d="M3.5 8 8 12l4-6.5 4 6.5 4.5-4-1.5 10h-14zM5 20.5h14"/>',
+      podio:       '<path d="M3 20.5h18M9 20.5v-11h6v11M3 20.5v-6h6M15 20.5v-8h6"/>',
+      campeon:     '<path d="M8 4h8v6a4 4 0 0 1-8 0zM8 6H4.5a3.5 3.5 0 0 0 3.8 4.2M16 6h3.5a3.5 3.5 0 0 1-3.8 4.2M12 14v3.5M8.5 20.5h7M10 17.5h4"/>',
+      centenario:  '<text x="12" y="16" text-anchor="middle" font-family="Barlow Condensed, sans-serif" font-weight="700" font-size="10" fill="currentColor" stroke="none">100</text><circle cx="12" cy="12" r="9"/>',
+      madrugador:  '<path d="M3 18.5h18M7 18.5a5 5 0 0 1 10 0M12 4.5v4M4.9 11.4l1.5 1.5M19.1 11.4l-1.5 1.5M9.5 6.5 12 4l2.5 2.5"/>'
+    }
+
+    function medallaInsignia(codigo, tam = 60) {
+      const id = 'med-' + (++idSvg)
+      const icono = ICONOS_INSIGNIA[codigo] || ICONOS_INSIGNIA.primer_paso
+      return `
+        <svg class="medalla" width="${tam}" height="${tam}" viewBox="0 0 60 60" aria-hidden="true">
+          <defs>
+            <linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#ffe594"/><stop offset=".5" stop-color="#e0b043"/><stop offset="1" stop-color="#8c6417"/>
+            </linearGradient>
+          </defs>
+          <path d="M30 2.5 54 16.25v27.5L30 57.5 6 43.75v-27.5z" fill="url(#${id})"/>
+          <path d="M30 8 49 19v22L30 52 11 41V19z" fill="#1d1a1b" stroke="rgba(0,0,0,.4)"/>
+          <g transform="translate(16 16) scale(1.1667)" fill="none" stroke="#f3d27a" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" color="#f3d27a">${icono}</g>
+        </svg>`
+    }
+
+    const plural = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`
+    const mesDeISO = iso => new Date(iso.slice(0, 10) + 'T00:00:00')
+
+    let rankingMes = null          // 'YYYY-MM-01' elegido en el selector (null = el actual)
+    const rankingsCache = {}
+
+    function renderizarNivel() {
+      const cont = document.getElementById('nivelGl')
+      if (!document.body.classList.contains('viendo-nivel') || !glPerfil) return
+
+      const g = glPerfil
+      const nivel = NIVELES[g.nivel] ? g.nivel : 'bronce'
+      const n = g.asistencias_mes
+      const tope = g.niveles.diamante
+      const pct = v => Math.min(100, (v / tope) * 100)
+      const hoy = new Date()
+      const reglas = g.reglas || null
+      const hitos = [['plata', g.niveles.plata], ['oro', g.niveles.oro], ['diamante', tope]]
+
+      const meta = g.siguiente
+        ? `Te ${g.siguiente.faltan === 1 ? 'falta' : 'faltan'} <strong>${plural(g.siguiente.faltan, 'día', 'días')}</strong> para llegar a <strong>${NIVELES[g.siguiente.nivel].nombre}</strong> este mes`
+        : `<strong>Llegaste al nivel máximo del mes.</strong>`
+
+      const ganadas = (g.insignias || []).filter(i => i.obtenida_en)
+      const insignias = [...(g.insignias || [])].sort((a, b) => (!!b.obtenida_en) - (!!a.obtenida_en))
+
+      const stat = (nombre, valor, unidad, extra) => `
+        <div class="nv-stat">
+          <div class="nv-stat-nombre">${nombre}</div>
+          <div class="nv-stat-valor">${valor}${unidad ? `<small>${unidad}</small>` : ''}</div>
+          ${extra ? `<div class="nv-stat-extra">${extra}</div>` : ''}
+        </div>`
+
+      const rm = g.racha_mensual, rs = g.racha_semanal
+
+      cont.innerHTML = `
+        <h2 class="prog-titulo">Mi nivel</h2>
+        <p class="prog-bajada">${capitalizarMes(MESES_LARGOS[hoy.getMonth()])} ${hoy.getFullYear()}. Tu nivel se arma con los días que venís al gimnasio este mes.</p>
+
+        <section class="nv-hero nivel-${nivel}" aria-label="Nivel del mes">
+          <div class="nv-top">
+            ${escudoNivel(nivel, 84)}
+            <div class="nv-nivel">
+              <div class="nv-etiqueta">Nivel del mes</div>
+              <div class="nv-nombre">${NIVELES[nivel].nombre.toUpperCase()}</div>
+            </div>
+            <div class="nv-dias">
+              <span class="nv-num">${n}</span>
+              <span class="nv-dias-texto">${n === 1 ? 'día' : 'días'} en ${MESES_LARGOS[hoy.getMonth()]}</span>
+            </div>
+          </div>
+          <div class="nv-pista" role="progressbar" aria-valuemin="0" aria-valuemax="${tope}" aria-valuenow="${Math.min(n, tope)}">
+            <div class="nv-relleno" style="width:${pct(n)}%"></div>
+            ${hitos.slice(0, 2).map(([, v]) => `<div class="nv-hito" style="left:${pct(v)}%"></div>`).join('')}
+          </div>
+          <div class="nv-hitos">
+            ${hitos.map(([k, v]) => `<span class="nivel-${k}${n >= v ? ' logrado' : ''}" style="left:${pct(v)}%"><b>${NIVELES[k].nombre}</b> ${v}</span>`).join('')}
+          </div>
+          <p class="nv-meta">${meta}</p>
+        </section>
+
+        <div class="nv-stats">
+          ${stat('Puesto del mes', g.puesto ? g.puesto + '°' : '–', '', g.oculto_ranking ? 'Estás oculto del ranking' : (g.puesto ? '' : 'Entrená este mes para entrar'))}
+          ${stat('Racha mensual', rm || '0', rm === 1 ? 'mes' : 'meses',
+                 reglas ? `Meses seguidos con ${reglas.racha_mensual_minimo} o más días` : 'Meses seguidos entrenando')}
+          ${stat('Racha semanal', rs || '0', rs === 1 ? 'semana' : 'semanas',
+                 reglas ? `Semanas seguidas con ${reglas.racha_semanal_minimo} o más días` : 'Semanas seguidas entrenando')}
+          ${stat('Puntos', Number(g.puntos_total).toLocaleString('es-AR'), '', plural(g.total_asistencias, 'entrenamiento en total', 'entrenamientos en total'))}
+        </div>
+
+        <section class="panel" aria-labelledby="tituloInsignias">
+          <div class="panel-cab">
+            <div>
+              <h3 class="panel-titulo" id="tituloInsignias">Insignias</h3>
+              <p class="panel-sub">Se desbloquean cuando ingresás con tu DNI en Recepción</p>
+            </div>
+            <div class="nv-contador">${ganadas.length}<small> de ${insignias.length}</small></div>
+          </div>
+          <div class="nv-insignias">
+            ${insignias.map(i => `
+              <div class="nv-insignia${i.obtenida_en ? ' ganada' : ''}">
+                ${medallaInsignia(i.codigo, 54)}
+                <div class="nv-insignia-nombre">${escapar(i.nombre)}</div>
+                ${i.obtenida_en
+                  ? `<div class="nv-insignia-fecha">Ganada el ${fechaCorta(i.obtenida_en)}</div>`
+                  : `<div class="nv-insignia-desc">${escapar(i.descripcion)}</div>`}
+              </div>`).join('')}
+          </div>
+        </section>
+
+        <section class="panel" aria-labelledby="tituloHistorial">
+          <div class="panel-cab">
+            <div>
+              <h3 class="panel-titulo" id="tituloHistorial">Últimos 12 meses</h3>
+              <p class="panel-sub">Días que entrenaste cada mes y el nivel que alcanzaste</p>
+            </div>
+          </div>
+          ${historialMeses(g)}
+        </section>
+
+        <section class="panel" aria-labelledby="tituloRanking">
+          <div class="panel-cab">
+            <div>
+              <h3 class="panel-titulo" id="tituloRanking">Ranking</h3>
+              <p class="panel-sub">Por días entrenados en el mes</p>
+            </div>
+            <select class="nv-select" id="rankingMes" aria-label="Mes del ranking">
+              ${opcionesMeses()}
+            </select>
+          </div>
+          <div id="rankingLista">${listaRanking(g.ranking, true)}</div>
+        </section>
+
+        <section class="panel" aria-labelledby="tituloPuntos">
+          <div class="panel-cab">
+            <div>
+              <h3 class="panel-titulo" id="tituloPuntos">Últimos puntos</h3>
+              <p class="panel-sub">Los puntos se suman aparte del nivel y no se pierden al cambiar el mes</p>
+            </div>
+          </div>
+          ${(g.movimientos || []).length
+            ? `<ul class="nv-movs">${g.movimientos.map(m => `
+                <li class="nv-mov">
+                  <span class="nv-mov-fecha">${fechaDM(m.fecha)}</span>
+                  <span>${escapar(m.concepto)}</span>
+                  <span class="nv-mov-pts">+${m.puntos}</span>
+                </li>`).join('')}</ul>`
+            : '<p class="nv-nota">Todavía no sumaste puntos. Cada día que ingresás con tu DNI suma.</p>'}
+        </section>
+
+        ${reglas ? seccionReglas(reglas) : ''}
+      `
+
+      document.getElementById('rankingMes').value = rankingMes || ''
+      document.getElementById('rankingMes').addEventListener('change', e => cambiarMesRanking(e.target.value || null))
+      renderizarNivelEnlaces()
+      if (rankingMes) cambiarMesRanking(rankingMes)
+    }
+
+    const capitalizarMes = t => t.charAt(0).toUpperCase() + t.slice(1)
+
+    function historialMeses(g) {
+      const meses = g.historial || []
+      const tope = Math.max(g.niveles.diamante + 3, ...meses.map(m => m.asistencias))
+      const alto = v => (v / tope) * 100
+      const actual = meses.length - 1
+      const guias = [['Plata', g.niveles.plata], ['Oro', g.niveles.oro], ['Diamante', g.niveles.diamante]]
+      // La zona de barras ocupa el 100% del alto menos el espacio del número
+      return `
+        <div class="nv-historial" role="img" aria-label="Días entrenados por mes">
+          ${meses.map((m, i) => `
+            <div class="nv-mes nivel-${m.nivel}${m.asistencias ? '' : ' vacio'}${i === actual ? ' actual' : ''}"
+                 title="${capitalizarMes(MESES_LARGOS[mesDeISO(m.mes).getMonth()])}: ${plural(m.asistencias, 'día', 'días')} · ${NIVELES[m.nivel].nombre}">
+              <span class="nv-mes-valor">${m.asistencias}</span>
+              <div class="nv-mes-barra" style="height:calc((100% - 1.3rem) * ${alto(m.asistencias) / 100})"></div>
+            </div>`).join('')}
+          ${guias.map(([nombre, v]) => `<div class="nv-guia" style="bottom:calc((100% - 2.7rem) * ${alto(v) / 100})"><span>${nombre}</span></div>`).join('')}
+        </div>
+        <div class="nv-meses">
+          ${meses.map((m, i) => `<span class="${i === actual ? 'actual' : ''}">${MESES_LARGOS[mesDeISO(m.mes).getMonth()].slice(0, 3)}</span>`).join('')}
+        </div>`
+    }
+
+    function opcionesMeses() {
+      const hoy = new Date()
+      let html = ''
+      for (let i = 0; i < 6; i++) {
+        const d = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1)
+        const valor = i === 0 ? '' : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`
+        html += `<option value="${valor}">${i === 0 ? 'Este mes' : `${capitalizarMes(MESES_LARGOS[d.getMonth()])} ${d.getFullYear()}`}</option>`
+      }
+      return html
+    }
+
+    // esActual: en el mes en curso se marca la fila del alumno
+    function listaRanking(datos, esActual) {
+      const filas = (datos && datos.ranking) || []
+      if (!filas.length) {
+        return `<p class="nv-nota">${esActual ? 'Todavía nadie entrenó este mes. El primero que ingrese arranca arriba.' : 'No hay ingresos registrados en ese mes.'}</p>`
+      }
+      const g = glPerfil
+      const yo = esActual && !g.oculto_ranking && g.puesto ? { puesto: g.puesto, nombre: g.nombre } : null
+      let marcado = false
+
+      const fila = (f, esVos) => {
+        const medalla = MEDALLAS_PUESTO[f.puesto]
+        return `
+          <li class="nv-fila${esVos ? ' vos' : ''}">
+            <span class="nv-puesto${medalla ? ` p${f.puesto} nivel-${medalla}` : ''}">${f.puesto}</span>
+            <span class="nv-fila-nombre">${escapar(f.nombre)}${esVos ? '<em>Vos</em>' : ''}</span>
+            ${f.nivel ? `<span class="nv-fila-nivel">${escudoNivel(f.nivel, 20)}<span>${NIVELES[f.nivel].nombre}</span></span>` : '<span></span>'}
+            <span class="nv-fila-dias">${f.asistencias}<small>${f.asistencias === 1 ? 'día' : 'días'}</small></span>
+          </li>`
+      }
+
+      let html = '<ol class="nv-ranking">' + filas.map(f => {
+        const esVos = !!yo && !marcado && f.puesto === yo.puesto && f.nombre === yo.nombre
+        if (esVos) marcado = true
+        return fila(f, esVos)
+      }).join('')
+
+      // Si el alumno no entra en el top, se agrega su fila al final
+      if (yo && !marcado) {
+        html += '<li class="nv-separador" aria-hidden="true">···</li>' +
+          fila({ puesto: yo.puesto, nombre: yo.nombre, nivel: g.nivel, asistencias: g.asistencias_mes }, true)
+      }
+      html += '</ol>'
+
+      if (esActual && g.oculto_ranking) {
+        html += `<p class="nv-nota">Elegiste no aparecer en el ranking. <button type="button" id="irMisDatos">Cambiarlo en Mis datos</button></p>`
+      } else if (esActual) {
+        html += `<p class="nv-nota">Aparecés como <strong>${escapar(g.nombre)}</strong>. <button type="button" id="irMisDatos">Cambiar nombre o apodo</button></p>`
+      }
+      return html
+    }
+
+    async function cambiarMesRanking(mes) {
+      rankingMes = mes
+      const lista = document.getElementById('rankingLista')
+      if (!lista) return
+      if (!mes) {
+        lista.innerHTML = listaRanking(glPerfil.ranking, true)
+        return renderizarNivelEnlaces()
+      }
+      if (!rankingsCache[mes]) {
+        lista.innerHTML = '<p class="nv-nota">Cargando…</p>'
+        const { data, error } = await db.rpc('gym_levels_ranking', { p_mes: mes })
+        if (error) { lista.innerHTML = '<p class="nv-nota">No se pudo cargar el ranking. Probá de nuevo.</p>'; return }
+        rankingsCache[mes] = data
+      }
+      if (rankingMes === mes) lista.innerHTML = listaRanking(rankingsCache[mes], false)
+    }
+
+    // "Cambiar nombre o apodo": lleva a Mis datos con el formulario abierto
+    function renderizarNivelEnlaces() {
+      const irDatos = document.getElementById('irMisDatos')
+      if (irDatos) irDatos.addEventListener('click', () => {
+        cambiarVista('rutina')
+        if (formDatos.classList.contains('oculto') && !btnEditarDatos.classList.contains('oculto')) abrirFormDatos(true)
+        setTimeout(() => document.querySelector('.mis-datos').scrollIntoView({ behavior: 'smooth', block: 'center' }), 80)
+      })
+    }
+
+    function seccionReglas(r) {
+      const fila = (texto, valor) => `<div class="nv-regla"><span>${texto}</span><strong>${valor}</strong></div>`
+      return `
+        <details class="panel nv-reglas">
+          <summary>Cómo funciona</summary>
+          <div class="nv-reglas-grid">
+            <div>
+              <h4>Niveles del mes</h4>
+              ${[['bronce', `0 a ${r.nivel_plata - 1} días`], ['plata', `${r.nivel_plata} a ${r.nivel_oro - 1} días`],
+                 ['oro', `${r.nivel_oro} a ${r.nivel_diamante - 1} días`], ['diamante', `${r.nivel_diamante} días o más`]]
+                .map(([k, t]) => `<div class="nv-regla"><span class="nivel-chip">${escudoNivel(k, 18)}${NIVELES[k].nombre}</span><strong>${t}</strong></div>`).join('')}
+              <p class="nv-nota">Cuenta un día por fecha: si ingresás dos veces el mismo día, suma uno. El 1° de cada mes el nivel vuelve a empezar; tu historial queda guardado.</p>
+            </div>
+            <div>
+              <h4>Puntos</h4>
+              ${fila('Cada día que entrenás', `+${r.puntos_asistencia}`)}
+              ${fila('Llegar a 3 días en la semana', `+${r.bono_semana_3}`)}
+              ${fila('Llegar a 4 días en la semana', `+${r.bono_semana_4}`)}
+              ${fila(`Cada 4 semanas seguidas con ${r.racha_semanal_minimo} o más días`, `+${r.bono_racha_4_semanas}`)}
+              ${fila(`Llegar a ${r.objetivo_mensual} días en el mes`, `+${r.bono_objetivo_mensual}`)}
+            </div>
+          </div>
+        </details>`
+    }
+
 
     // Foto: se recorta cuadrada y se achica para que ocupe poco
     const inputFoto = document.getElementById('inputFoto')
@@ -2072,9 +2986,17 @@
       btnEditarDatos.classList.toggle('oculto', abrir)
       errorDatos.classList.add('oculto')
 
+      document.getElementById('apodo').classList.toggle('oculto', abrir || !glPerfil)
+
       if (abrir) {
         document.getElementById('inAltura').value = perfil.altura_cm || ''
         document.getElementById('inPeso').value = pesoActual() || ''
+        if (glPerfil) {
+          const inApodo = document.getElementById('inApodo')
+          inApodo.value = glPerfil.alias || ''
+          inApodo.placeholder = `Ej: ${nombrePorDefecto()}`
+          document.getElementById('inRanking').checked = !glPerfil.oculto_ranking
+        }
         document.getElementById('inAltura').focus()
       }
     }
@@ -2106,6 +3028,20 @@
           if (error) throw error
         }
 
+        // Nombre visible y ranking (Gym Levels)
+        if (glPerfil) {
+          const apodo = document.getElementById('inApodo').value.trim().replace(/\s+/g, ' ')
+          const oculto = !document.getElementById('inRanking').checked
+          if (apodo && (apodo.length < 2 || apodo.length > 20)) {
+            throw { paraElSocio: 'El nombre o apodo tiene que tener entre 2 y 20 letras.' }
+          }
+          if (apodo !== (glPerfil.alias || '') || oculto !== !!glPerfil.oculto_ranking) {
+            const { error } = await db.rpc('gym_levels_guardar_perfil', { p_socio: socio.id, p_alias: apodo || null, p_oculto: oculto })
+            if (error) throw { paraElSocio: error.message && /caracteres|letras|números/.test(error.message) ? error.message : null }
+            await cargarGymLevels()
+          }
+        }
+
         const { data } = await db.rpc('socio_obtener_perfil', { p_socio: socio.id })
         if (data) { perfil = data; perfil.pesos = perfil.pesos || [] }
 
@@ -2113,7 +3049,7 @@
         renderizarPerfil()
       } catch (err) {
         console.error(err)
-        mostrarErrorDatos('No se pudieron guardar los datos. Revisá la conexión y probá de nuevo.')
+        mostrarErrorDatos(err && err.paraElSocio || 'No se pudieron guardar los datos. Revisá la conexión y probá de nuevo.')
       } finally {
         btnGuardarDatos.disabled = false
         btnGuardarDatos.textContent = 'Guardar'
@@ -2452,12 +3388,14 @@
        ============================================================ */
     function cambiarVista(vista) {
       document.body.classList.toggle('viendo-progreso', vista === 'progreso')
+      document.body.classList.toggle('viendo-nivel', vista === 'nivel')
       document.querySelectorAll('.pestanas button').forEach(b => {
         const activa = b.dataset.vista === vista
         b.classList.toggle('activa', activa)
         b.setAttribute('aria-selected', String(activa))
       })
       if (vista === 'progreso') renderizarProgreso()
+      if (vista === 'nivel') renderizarNivel()
       document.querySelector('.acciones').scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
 
