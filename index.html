@@ -377,6 +377,143 @@
     .fila .chevron { width: 16px; height: 16px; color: var(--texto-3); transition: color var(--transicion); }
     .fila:hover .chevron { color: var(--texto); }
 
+    /* ---------- Gym Levels en el inicio ---------- */
+    .nivel-bronce   { --n-claro: #e7ab74; --n-medio: #b8733a; --n-oscuro: #6e3c18; }
+    .nivel-plata    { --n-claro: #f4f6f9; --n-medio: #b9bfc7; --n-oscuro: #69707a; }
+    .nivel-oro      { --n-claro: #ffe594; --n-medio: #e0b043; --n-oscuro: #8c6417; }
+    .nivel-diamante { --n-claro: #d2f5ff; --n-medio: #63c3ef; --n-oscuro: #1f5f9e; }
+    .escudo { display: block; flex: none; }
+
+    .gl-inicio {
+      margin-bottom: 3.25rem;
+      border-radius: 12px;
+      border: 1px solid var(--linea);
+      background:
+        radial-gradient(ellipse 45% 120% at 100% 0%, rgba(224, 176, 67, 0.08), transparent 70%),
+        var(--superficie);
+      overflow: hidden;
+    }
+
+    .gl-inicio-cab {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1.1rem 1.4rem;
+      border-bottom: 1px solid var(--linea);
+    }
+
+    .gl-inicio-titulo {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-family: var(--f-titulo);
+      font-weight: 600;
+      font-size: 1.45rem;
+      line-height: 1.1;
+    }
+
+    .gl-inicio-titulo .icono { color: #f0c75e; width: 22px; height: 22px; }
+    .gl-inicio-titulo span { color: var(--texto-3); font-weight: 500; }
+
+    .gl-ver {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--rojo-texto);
+      white-space: nowrap;
+    }
+
+    .gl-ver .icono { width: 16px; height: 16px; }
+    .gl-ver:hover { color: #ff8078; }
+
+    .gl-inicio-cuerpo {
+      display: grid;
+      grid-template-columns: 1.35fr 1fr;
+    }
+
+    .gl-top { list-style: none; padding: 0.5rem 1.4rem 0.8rem; }
+
+    .gl-fila {
+      display: grid;
+      grid-template-columns: 2.1rem minmax(0, 1fr) auto auto;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.55rem 0;
+      border-bottom: 1px solid var(--linea-suave);
+    }
+
+    .gl-fila:last-child { border-bottom: none; }
+
+    .gl-puesto {
+      display: grid;
+      place-items: center;
+      width: 1.9rem;
+      height: 1.9rem;
+      border-radius: 50%;
+      font-family: var(--f-titulo);
+      font-weight: 700;
+      color: var(--texto-2);
+    }
+
+    .gl-puesto.medalla {
+      color: #1b1819;
+      background: radial-gradient(circle at 35% 30%, var(--n-claro), var(--n-medio) 55%, var(--n-oscuro));
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+    }
+
+    .gl-nombre { min-width: 0; }
+    .gl-nombre strong { display: block; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .gl-nombre span { display: block; font-size: 0.8rem; color: var(--texto-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .gl-dias {
+      min-width: 3.5rem;
+      text-align: right;
+      font-family: var(--f-titulo);
+      font-weight: 700;
+      font-size: 1.35rem;
+    }
+
+    .gl-dias small { font-family: var(--f-texto); font-size: 0.75rem; font-weight: 500; color: var(--texto-3); margin-left: 0.15rem; }
+
+    .gl-lado {
+      padding: 1.1rem 1.4rem 1.2rem;
+      border-left: 1px solid var(--linea);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .gl-numeros { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .gl-numero span { display: block; font-size: 0.8rem; color: var(--texto-3); }
+
+    .gl-numero strong {
+      font-family: var(--f-titulo);
+      font-weight: 700;
+      font-size: 2.2rem;
+      line-height: 1;
+    }
+
+    .gl-niveles { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+
+    .gl-nivel {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.55rem 0.7rem;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--linea-suave);
+    }
+
+    .gl-nivel div { font-size: 0.8rem; color: var(--texto-2); line-height: 1.2; }
+    .gl-nivel strong { display: block; font-family: var(--f-titulo); font-size: 1.45rem; color: var(--n-claro); }
+
+    .gl-vacio { padding: 1.5rem 1.4rem; color: var(--texto-3); }
+    .gl-vacio strong { display: block; color: var(--texto); margin-bottom: 0.2rem; }
+
     /* ---------- Barra superior e inferior (solo celular) ---------- */
     .barra-movil,
     .nav-inferior,
@@ -450,6 +587,13 @@
       .encabezado-leon { width: 220px; right: -70px; }
 
       .acciones { grid-template-columns: 1fr; margin-bottom: 2.5rem; }
+      .gl-inicio { margin-bottom: 2.5rem; }
+      .gl-inicio-cab { padding: 1rem; }
+      .gl-inicio-titulo { font-size: 1.3rem; white-space: nowrap; }
+      .gl-inicio-titulo span { display: none; }
+      .gl-inicio-cuerpo { grid-template-columns: 1fr; }
+      .gl-top { padding: 0.25rem 1rem 0.5rem; }
+      .gl-lado { border-left: none; border-top: 1px solid var(--linea); padding: 1rem; }
       .accion { min-height: 72px; }
 
       .modulos { grid-template-columns: 1fr; border-top: none; }
@@ -579,6 +723,9 @@
           -->
           <section id="resumen" hidden></section>
 
+          <!-- Gym Levels: ranking del mes (migraciones 006 y 009). Sin ellas queda oculto. -->
+          <section class="gl-inicio" id="glInicio" aria-labelledby="tituloGl" hidden></section>
+
           <section aria-labelledby="tituloModulos">
             <h2 class="modulos-titulo" id="tituloModulos">Gestión</h2>
             <div class="modulos" id="modulos"></div>
@@ -624,6 +771,7 @@
       <g id="i-salir"><path d="M14.5 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4"/><path d="m10 8-4 4 4 4M6 12h10"/></g>
       <g id="i-menu"><path d="M4 7h16M4 12h16M4 17h16"/></g>
       <g id="i-chevron"><path d="m9.5 6 6 6-6 6"/></g>
+      <g id="i-trofeo"><path d="M8 4h8v6a4 4 0 0 1-8 0zM8 6H4.5a3.5 3.5 0 0 0 3.8 4.2M16 6h3.5a3.5 3.5 0 0 1-3.8 4.2M12 14v3.5M8.5 20.5h7M10 17.5h4"/></g>
     </defs>
   </svg>
 
@@ -667,7 +815,8 @@
         icono: 'i-rutinas',
         items: [
           { nombre: 'Rutinas', desc: 'Armar la rutina de un socio y enviarle el link', href: 'rutinas.html', icono: 'i-rutinas' },
-          { nombre: 'Plantillas de rutina', desc: 'Rutinas base por nivel', href: 'plantillas.html', icono: 'i-plantillas' }
+          { nombre: 'Plantillas de rutina', desc: 'Rutinas base por nivel', href: 'plantillas.html', icono: 'i-plantillas' },
+          { nombre: 'Gym Levels', desc: 'Ranking del mes, niveles e insignias', href: 'gym-levels.html', icono: 'i-trofeo' }
         ]
       }
     ]
@@ -762,6 +911,88 @@
       renderizarEncabezado(admin[0].nombre)
       document.body.classList.remove('verificando')
       document.body.classList.add('listo')
+      cargarGymLevels()
+    }
+
+
+    /* ============================================================
+       GYM LEVELS EN EL INICIO
+       Datos reales de gym_levels_admin (migración 009). Si todavía no
+       está aplicada, el bloque no aparece.
+       ============================================================ */
+    const NIVELES = {
+      bronce:   { nombre: 'Bronce',   claro: '#e7ab74', medio: '#b8733a', oscuro: '#6e3c18' },
+      plata:    { nombre: 'Plata',    claro: '#f4f6f9', medio: '#b9bfc7', oscuro: '#69707a' },
+      oro:      { nombre: 'Oro',      claro: '#ffe594', medio: '#e0b043', oscuro: '#8c6417' },
+      diamante: { nombre: 'Diamante', claro: '#d2f5ff', medio: '#63c3ef', oscuro: '#1f5f9e' }
+    }
+    let idSvg = 0
+
+    function escudoNivel(nivel, tam = 64) {
+      const n = NIVELES[nivel] || NIVELES.bronce
+      const id = 'esc-' + (++idSvg)
+      const galon = y => `<path d="M20 ${y} 32 ${y + 7} 44 ${y}" fill="none" stroke="${n.oscuro}" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/>`
+      const marcas = {
+        bronce: galon(33), plata: galon(28) + galon(38), oro: galon(23) + galon(33) + galon(43),
+        diamante: `<path d="M23 27h18l5 7-14 16-14-16z" fill="${n.claro}" stroke="${n.oscuro}" stroke-width="2.2" stroke-linejoin="round"/><path d="M18 34h28M27 27l-2 7 7 16 7-16-2-7" fill="none" stroke="${n.oscuro}" stroke-width="1.6" stroke-linejoin="round"/>`
+      }
+      return `<svg class="escudo" width="${tam}" height="${Math.round(tam * 1.125)}" viewBox="0 0 64 72" aria-hidden="true">
+        <defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${n.claro}"/><stop offset=".55" stop-color="${n.medio}"/><stop offset="1" stop-color="${n.oscuro}"/></linearGradient></defs>
+        <path d="M32 3 58 12v24c0 16-12 27-26 33C18 63 6 52 6 36V12z" fill="url(#${id})" stroke="${n.oscuro}" stroke-width="1.5"/>
+        <path d="M32 9.5 52.5 16.5v19.5c0 12.5-9 21.5-20.5 26.5-11.5-5-20.5-14-20.5-26.5V16.5z" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="1.2"/>
+        <path d="M32 3 58 12v8L6 44V12z" fill="rgba(255,255,255,.14)"/>${marcas[nivel] || marcas.bronce}</svg>`
+    }
+
+    const escaparTexto = t => String(t ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+    const nombreBonito = t => String(t || '').toLowerCase().replace(/(^|\s)\S/g, c => c.toUpperCase())
+
+    async function cargarGymLevels() {
+      const caja = document.getElementById('glInicio')
+      let d
+      try {
+        const { data, error } = await db.rpc('gym_levels_admin', { p_mes: null })
+        if (error || !data) return
+        d = data
+      } catch { return }
+
+      const mes = new Date(d.mes + 'T00:00:00').toLocaleDateString('es-AR', { month: 'long' })
+      const medallas = { 1: 'oro', 2: 'plata', 3: 'bronce' }
+
+      const top = d.filas.slice(0, 5).map(f => `
+        <li class="gl-fila">
+          <span class="gl-puesto${medallas[f.puesto] ? ` medalla nivel-${medallas[f.puesto]}` : ''}">${f.puesto}</span>
+          <span class="gl-nombre">
+            <strong>${escaparTexto(nombreBonito(f.nombre))}</strong>
+            <span>${f.alias ? escaparTexto(f.alias) : NIVELES[f.nivel].nombre}${f.oculto ? ' · oculto en el ranking' : ''}</span>
+          </span>
+          ${escudoNivel(f.nivel, 22)}
+          <span class="gl-dias">${f.dias}<small>${f.dias === 1 ? 'día' : 'días'}</small></span>
+        </li>`).join('')
+
+      caja.innerHTML = `
+        <div class="gl-inicio-cab">
+          <h2 class="gl-inicio-titulo" id="tituloGl">${icono('i-trofeo')}Gym Levels <span>· ${mes}</span></h2>
+          <a class="gl-ver" href="gym-levels.html">Ver ranking${icono('i-chevron')}</a>
+        </div>
+        <div class="gl-inicio-cuerpo">
+          ${d.filas.length
+            ? `<ol class="gl-top">${top}</ol>`
+            : `<div class="gl-vacio"><strong>Todavía nadie entrenó este mes</strong>Cuando los socios ingresen con su DNI, el ranking se arma solo.</div>`}
+          <div class="gl-lado">
+            <div class="gl-numeros">
+              <div class="gl-numero"><span>Entrenaron en ${mes}</span><strong>${d.socios_mes}</strong></div>
+              <div class="gl-numero"><span>Ingresos hoy</span><strong>${d.ingresos_hoy}</strong></div>
+            </div>
+            <div class="gl-niveles">
+              ${['diamante', 'oro', 'plata', 'bronce'].map(k => `
+                <div class="gl-nivel nivel-${k}">
+                  ${escudoNivel(k, 24)}
+                  <div><strong>${d.por_nivel[k]}</strong>${NIVELES[k].nombre}</div>
+                </div>`).join('')}
+            </div>
+          </div>
+        </div>`
+      caja.hidden = false
     }
 
     document.getElementById('btnSalir').addEventListener('click', async () => {
