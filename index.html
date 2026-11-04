@@ -708,11 +708,11 @@
                 <div class="accion-desc">Cargar un socio nuevo</div>
               </div>
             </a>
-            <a class="accion" href="recepcion.html">
+            <a class="accion" href="recepcion.html" target="lion-recepcion">
               <svg class="icono" viewBox="0 0 24 24"><use href="#i-recepcion"/></svg>
               <div>
                 <div class="accion-titulo">Abrir recepción</div>
-                <div class="accion-desc">Pantalla de ingreso por DNI</div>
+                <div class="accion-desc">Se abre en otra pestaña para los socios</div>
               </div>
             </a>
           </section>
@@ -828,7 +828,7 @@
       const inicio = `
         <div class="nav-grupo">
           <a class="nav-link" href="index.html" aria-current="page">${icono('i-inicio')}Inicio</a>
-          <a class="nav-link" href="recepcion.html">${icono('i-recepcion')}Recepción</a>
+          <a class="nav-link" href="recepcion.html" target="lion-recepcion">${icono('i-recepcion')}Recepción</a>
         </div>`
 
       const grupos = MODULOS.map(g => `
