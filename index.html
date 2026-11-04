@@ -12,7 +12,7 @@
   <style>
     /* ============================================================
        TOKENS DE DISEÑO — se van a mover a css/tokens.css cuando
-       rediseñe el resto de las páginas.
+       rediseñemos el resto de las páginas.
        ============================================================ */
     :root {
       --fondo: #141213;
@@ -215,6 +215,7 @@
       transform: translateY(-50%);
       opacity: 0.08;
       filter: grayscale(1) brightness(1.6);
+      clip-path: inset(0 0 7% 0); /* recorta el texto que trae el logo abajo */
       pointer-events: none;
       user-select: none;
     }
