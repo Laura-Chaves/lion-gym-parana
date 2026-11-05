@@ -1551,7 +1551,7 @@
     body.viendo-nivel .btn-pdf { display: none; }
     body.sin-cargas .pestanas [data-vista="progreso"],
     body.sin-gl .pestanas [data-vista="nivel"] { display: none; }
-    body.sin-cargas.sin-gl .pestanas { display: none; }
+    body.sin-cargas.sin-gl.sin-turnos .pestanas { display: none; }
 
     .nivel-gl { padding-top: 1.5rem; padding-bottom: 3rem; }
 
@@ -1985,13 +1985,178 @@
     @media (max-width: 640px) {
       .acciones .contenedor { flex-wrap: wrap; row-gap: 0.55rem; }
       .pestanas { width: 100%; }
-      .pestanas button { flex: 1; padding: 0 0.4rem; }
+      .pestanas button { flex: 1; padding: 0 0.3rem; white-space: nowrap; font-size: 0.82rem; }
+      .mi-turno div { white-space: nowrap; }
+    }
+
+    /* ============================================================
+       TURNOS (migración 010)
+       ============================================================ */
+    body:not(.viendo-turnos) .turnos-gl { display: none; }
+    body.viendo-turnos .dias-nav,
+    body.viendo-turnos .dias,
+    body.viendo-turnos .btn-pdf { display: none; }
+    body.sin-turnos .pestanas [data-vista="turnos"] { display: none; }
+
+    .turnos-gl { padding-top: 1.5rem; padding-bottom: 3rem; }
+
+    .mis-turnos {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 1.1rem;
+    }
+
+    .mi-turno {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.7rem;
+      padding: 0.55rem 0.6rem 0.55rem 0.9rem;
+      border-radius: 10px;
+      border: 1px solid rgba(204, 0, 0, 0.5);
+      background: rgba(204, 0, 0, 0.1);
+    }
+
+    .mi-turno strong { font-family: var(--f-titulo); font-size: 1.2rem; line-height: 1; }
+    .mi-turno span { font-size: 0.85rem; color: var(--texto-2); }
+
+    .tr-dias {
+      display: flex;
+      gap: 0.45rem;
+      overflow-x: auto;
+      scrollbar-width: none;
+      margin: 1.25rem 0 1rem;
+      padding-bottom: 0.2rem;
+    }
+
+    .tr-dias::-webkit-scrollbar { display: none; }
+
+    .tr-dia {
+      position: relative;
+      flex: none;
+      min-width: 66px;
+      padding: 0.55rem 0.7rem 0.5rem;
+      border-radius: 10px;
+      border: 1px solid var(--linea);
+      background: var(--superficie);
+      color: var(--texto-2);
+      text-align: center;
+      cursor: pointer;
+      transition: border-color var(--transicion), background var(--transicion), color var(--transicion);
+    }
+
+    .tr-dia:hover { border-color: #4a3f42; color: var(--texto); }
+    .tr-dia.activo { border-color: var(--rojo); background: var(--rojo); color: #fff; }
+    .tr-dia small { display: block; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+    .tr-dia strong { display: block; font-family: var(--f-titulo); font-size: 1.55rem; line-height: 1.05; }
+    .tr-dia.cerrado { opacity: 0.45; }
+
+    .tr-dia .punto {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--rojo-texto);
+    }
+
+    .tr-dia.activo .punto { background: #fff; }
+
+    .tr-franjas {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 0.6rem;
+    }
+
+    .tr-franja {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      padding: 0.9rem 1rem 0.95rem;
+      border-radius: 12px;
+      border: 1px solid var(--linea);
+      background: var(--superficie);
+      min-width: 0;
+    }
+
+    .tr-franja.mio { border-color: var(--rojo); box-shadow: inset 0 0 0 1px var(--rojo); background: rgba(204, 0, 0, 0.07); }
+    .tr-franja.lleno:not(.mio) { opacity: 0.6; }
+
+    .tr-cab { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 0.2rem 0.75rem; }
+    .tr-hora { white-space: nowrap; }
+    .tr-hora { font-family: var(--f-titulo); font-weight: 700; font-size: 1.7rem; line-height: 1; }
+    .tr-hora small { font-family: var(--f-texto); font-size: 0.8rem; font-weight: 500; color: var(--texto-3); margin-left: 0.3rem; }
+    .tr-lugares { font-size: 0.82rem; font-weight: 600; color: var(--texto-2); white-space: nowrap; }
+    .tr-lugares.pocos { color: #f5c46b; }
+    .tr-lugares.lleno { color: var(--texto-3); }
+
+    .tr-pista { height: 6px; border-radius: 99px; background: rgba(255, 255, 255, 0.07); overflow: hidden; }
+    .tr-ocupado { height: 100%; border-radius: 99px; background: var(--rojo); }
+    .tr-franja.lleno .tr-ocupado { background: var(--texto-3); }
+
+    .tr-nombres { display: flex; flex-wrap: wrap; gap: 0.3rem; min-height: 1.5rem; }
+
+    .tr-nombre {
+      padding: 0.12rem 0.5rem;
+      border-radius: 99px;
+      font-size: 0.78rem;
+      color: var(--texto-2);
+      background: rgba(255, 255, 255, 0.06);
+      white-space: nowrap;
+    }
+
+    .tr-nombre.yo { color: #fff; background: rgba(204, 0, 0, 0.35); }
+    .tr-vacio { font-size: 0.8rem; color: var(--texto-3); }
+
+    .tr-boton {
+      height: 40px;
+      margin-top: auto;
+      border-radius: var(--radio);
+      border: 1px solid var(--linea);
+      background: var(--elevada);
+      color: var(--texto);
+      font: inherit;
+      font-weight: 600;
+      font-size: 0.92rem;
+      cursor: pointer;
+      transition: background var(--transicion), border-color var(--transicion);
+    }
+
+    .tr-boton.anotarme { background: var(--rojo); border-color: var(--rojo); color: #fff; }
+    .tr-boton.anotarme:hover { background: var(--rojo-hover); }
+    .tr-boton.cancelar { color: var(--texto-2); background: none; }
+    .tr-boton.cancelar:hover { color: #ffb3ad; border-color: rgba(255, 90, 82, 0.5); }
+    .tr-boton:disabled { cursor: default; opacity: 0.55; }
+
+    .tr-nota { margin-top: 1rem; font-size: 0.85rem; color: var(--texto-3); }
+
+    .tr-aviso-dia {
+      margin-bottom: 0.8rem;
+      padding: 0.7rem 0.95rem;
+      border-radius: 10px;
+      font-size: 0.92rem;
+      color: var(--texto-2);
+      background: rgba(204, 0, 0, 0.08);
+      border: 1px solid rgba(204, 0, 0, 0.35);
+    }
+
+    .tr-aviso-dia strong { color: var(--texto); }
+    .tr-cerrado { padding: 2rem 1rem; text-align: center; color: var(--texto-3); border: 1px dashed var(--linea); border-radius: 12px; }
+
+    @media (max-width: 640px) {
+      .tr-franjas { grid-template-columns: 1fr; }
+      .tr-franja { flex-direction: row; flex-wrap: wrap; align-items: center; }
+      .tr-cab { flex: 1 1 100%; }
+      .tr-pista { flex: 1 1 100%; }
+      .tr-nombres { flex: 1 1 100%; }
+      .tr-boton { flex: 1 1 100%; }
     }
 
     @media print {
       .btn-salir-kiosco, .kiosco-velo { display: none !important; }
-      .pestanas, .btn-registrar, .progreso, .nivel-gl, .hoja-velo, .aviso { display: none !important; }
-      body.viendo-nivel .dias { display: block !important; }
+      .pestanas, .btn-registrar, .progreso, .nivel-gl, .turnos-gl, .hoja-velo, .aviso { display: none !important; }
+      body.viendo-nivel .dias, body.viendo-turnos .dias { display: block !important; }
       body.viendo-progreso .dias { display: block !important; }
     }
 
@@ -2228,6 +2393,7 @@
           <button type="button" data-vista="rutina" class="activa" aria-selected="true">Rutina</button>
           <button type="button" data-vista="progreso" aria-selected="false">Mi progreso</button>
           <button type="button" data-vista="nivel" aria-selected="false">Mi nivel</button>
+          <button type="button" data-vista="turnos" aria-selected="false">Turnos</button>
         </div>
         <div class="dias-nav" id="diasNav"></div>
         <button class="btn-pdf" type="button" id="btnPdf" aria-label="Descargar o imprimir en PDF">
@@ -2240,6 +2406,7 @@
     <main class="contenedor dias" id="dias"></main>
     <main class="contenedor progreso" id="progreso" aria-live="polite"></main>
     <main class="contenedor nivel-gl" id="nivelGl" aria-live="polite"></main>
+    <main class="contenedor turnos-gl" id="turnosGl" aria-live="polite"></main>
 
     <footer class="pie">
       <div class="contenedor">
@@ -2298,7 +2465,7 @@
         // Primero la vigente; si ninguna está marcada, la más reciente
         const inicial = rutinas.find(r => r.activa) || rutinas[0]
 
-        await Promise.all([cargarPerfil(), cargarCargas(), cargarGymLevels()])
+        await Promise.all([cargarPerfil(), cargarCargas(), cargarGymLevels(), cargarTurnos()])
         armarSelector()
         await mostrarRutina(inicial.id)
 
@@ -3463,12 +3630,168 @@
       setTimeout(() => el.remove(), 4200)
     }
 
+
+    /* ============================================================
+       TURNOS — el alumno elige el horario en que va a venir
+       Funciones: turnos_agenda / turnos_reservar / turnos_cancelar (migración 010)
+       ============================================================ */
+    let agenda = null
+    let diaElegido = null
+    let refrescoTurnos = null
+    const DIAS_CORTOS = ['', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
+    const DIAS_LARGOS = ['', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo']
+    const dosDig = n => String(n).padStart(2, '0')
+
+    async function cargarTurnos() {
+      try {
+        const { data, error } = await db.rpc('turnos_agenda', { p_socio: socio.id })
+        agenda = !error && data ? data : null
+      } catch { agenda = null }
+      document.body.classList.toggle('sin-turnos', !agenda)
+      if (agenda && (!diaElegido || !agenda.dias.some(d => d.fecha === diaElegido))) {
+        // Por defecto, el primer día que todavía tiene horarios por delante
+        const conLugar = agenda.dias.find(d => d.franjas.some(f => !f.pasada))
+        diaElegido = (conLugar || agenda.dias[0]).fecha
+      }
+      if (agenda) renderizarTurnos()
+    }
+
+    function nombreDia(fecha) {
+      const d = new Date(fecha + 'T00:00:00')
+      const hoy = agenda.hoy
+      const manana = new Date(new Date(hoy + 'T00:00:00').getTime() + 86400000)
+      const iso = x => `${x.getFullYear()}-${dosDig(x.getMonth() + 1)}-${dosDig(x.getDate())}`
+      if (fecha === hoy) return 'hoy'
+      if (fecha === iso(manana)) return 'mañana'
+      return `el ${DIAS_LARGOS[((d.getDay() + 6) % 7) + 1]} ${d.getDate()}`
+    }
+
+    function renderizarTurnos() {
+      const cont = document.getElementById('turnosGl')
+      if (!document.body.classList.contains('viendo-turnos') || !agenda) return
+
+      const mis = agenda.mis_turnos || []
+      const dia = agenda.dias.find(d => d.fecha === diaElegido) || agenda.dias[0]
+      const futuras = dia.franjas.filter(f => !f.pasada)
+      const pasadas = dia.franjas.length - futuras.length
+      const tengoEseDia = mis.some(t => t.fecha === dia.fecha)
+      const yo = (glPerfil && glPerfil.nombre) || nombrePorDefecto()
+
+      cont.innerHTML = `
+        <h2 class="prog-titulo">Turnos</h2>
+        <p class="prog-bajada">Anotate en el horario que vas a venir. Ves cuántos lugares quedan${agenda.con_nombres ? ' y quiénes van' : ''}.</p>
+
+        ${mis.length ? `
+          <div class="mis-turnos" aria-label="Tus próximos turnos">
+            ${mis.map(t => `
+              <div class="mi-turno">
+                <div><strong>${dosDig(t.hora)}:00</strong> <span>${nombreDia(t.fecha)}</span></div>
+                <button type="button" class="tr-boton cancelar" style="height:32px;padding:0 0.7rem" data-cancelar="${t.fecha}|${t.hora}">Cancelar</button>
+              </div>`).join('')}
+          </div>` : ''}
+
+        <div class="tr-dias" role="tablist" aria-label="Día">
+          ${agenda.dias.map(d => {
+            const f = new Date(d.fecha + 'T00:00:00')
+            const cerrado = !d.franjas.length
+            return `
+              <button type="button" class="tr-dia${d.fecha === dia.fecha ? ' activo' : ''}${cerrado ? ' cerrado' : ''}" data-dia="${d.fecha}" aria-selected="${d.fecha === dia.fecha}">
+                ${mis.some(t => t.fecha === d.fecha) ? '<span class="punto" aria-label="Tenés turno"></span>' : ''}
+                <small>${d.fecha === agenda.hoy ? 'Hoy' : DIAS_CORTOS[d.dia_semana]}</small>
+                <strong>${f.getDate()}</strong>
+              </button>`
+          }).join('')}
+        </div>
+
+        ${tengoEseDia && agenda.max_por_dia <= 1 && futuras.length ? `
+          <div class="tr-aviso-dia">Ya tenés turno ${nombreDia(dia.fecha)} a las <strong>${mis.filter(t => t.fecha === dia.fecha).map(t => dosDig(t.hora) + ':00').join(', ')}</strong>. Para cambiar de horario, cancelá ese primero.</div>` : ''}
+
+        ${!dia.franjas.length
+          ? `<div class="tr-cerrado">El gimnasio no toma turnos ${nombreDia(dia.fecha)}.</div>`
+          : !futuras.length
+            ? `<div class="tr-cerrado">Ya pasaron todos los horarios de ${nombreDia(dia.fecha)}.</div>`
+            : `<div class="tr-franjas">${futuras.map(f => franjaHtml(f, dia, tengoEseDia, yo)).join('')}</div>`}
+
+        <p class="tr-nota">
+          ${pasadas && futuras.length ? 'Los horarios que ya pasaron no se muestran. ' : ''}
+          ${agenda.max_por_dia == 1 ? 'Podés tener un turno por día. ' : `Podés tener hasta ${agenda.max_por_dia} turnos por día. `}
+          ${agenda.con_nombres ? 'Los demás te ven con el nombre que elegiste en Mis datos.' : ''}
+        </p>`
+
+      cont.querySelectorAll('[data-dia]').forEach(b => b.addEventListener('click', () => { diaElegido = b.dataset.dia; renderizarTurnos() }))
+      cont.querySelectorAll('[data-reservar]').forEach(b => b.addEventListener('click', () => accionTurno(b, 'turnos_reservar')))
+      cont.querySelectorAll('[data-cancelar]').forEach(b => b.addEventListener('click', () => accionTurno(b, 'turnos_cancelar')))
+    }
+
+    function franjaHtml(f, dia, tengoEseDia, yo) {
+      const lugares = Math.max(0, f.capacidad - f.anotados)
+      const lleno = lugares === 0
+      const pct = Math.min(100, (f.anotados / f.capacidad) * 100)
+      const nombres = f.nombres || []
+      const max = 8
+      const valor = `${dia.fecha}|${f.hora}`
+
+      let boton
+      if (f.mio) boton = `<button type="button" class="tr-boton cancelar" data-cancelar="${valor}">Estás anotado · Cancelar</button>`
+      else if (lleno) boton = '<button type="button" class="tr-boton" disabled>Completo</button>'
+      else if (tengoEseDia && agenda.max_por_dia <= 1) boton = ''
+      else boton = `<button type="button" class="tr-boton anotarme" data-reservar="${valor}">Anotarme</button>`
+
+      // El propio nombre se marca (el primero que coincide, si está anotado)
+      let marcado = !f.mio
+      const chips = nombres.slice(0, max).map(n => {
+        const esYo = !marcado && n === yo
+        if (esYo) marcado = true
+        return `<span class="tr-nombre${esYo ? ' yo' : ''}">${escapar(n)}</span>`
+      }).join('')
+
+      return `
+        <article class="tr-franja${f.mio ? ' mio' : ''}${lleno ? ' lleno' : ''}">
+          <div class="tr-cab">
+            <span class="tr-hora">${dosDig(f.hora)}:00<small>a ${dosDig(f.hora + 1)}:00</small></span>
+            <span class="tr-lugares${lleno ? ' lleno' : lugares <= Math.max(2, f.capacidad * 0.2) ? ' pocos' : ''}">
+              ${lleno ? 'Completo' : `${lugares === 1 ? 'Queda 1 lugar' : `Quedan ${lugares}`}`} · ${f.anotados}/${f.capacidad}
+            </span>
+          </div>
+          <div class="tr-pista" role="progressbar" aria-valuemin="0" aria-valuemax="${f.capacidad}" aria-valuenow="${f.anotados}"><div class="tr-ocupado" style="width:${pct}%"></div></div>
+          ${agenda.con_nombres ? `<div class="tr-nombres">${nombres.length ? chips + (nombres.length > max ? `<span class="tr-nombre">+${nombres.length - max}</span>` : '') : '<span class="tr-vacio">Todavía no se anotó nadie</span>'}</div>` : ''}
+          ${boton}
+        </article>`
+    }
+
+    async function accionTurno(boton, funcion) {
+      const [fecha, hora] = (boton.dataset.reservar || boton.dataset.cancelar).split('|')
+      boton.disabled = true
+      const texto = boton.textContent
+      boton.textContent = funcion === 'turnos_reservar' ? 'Anotando…' : 'Cancelando…'
+      const { error } = await db.rpc(funcion, { p_socio: socio.id, p_fecha: fecha, p_hora: Number(hora) })
+      if (error) {
+        boton.disabled = false
+        boton.textContent = texto
+        mostrarAvisoError(error.message || 'No se pudo. Probá de nuevo.')
+        await cargarTurnos()
+        return
+      }
+      mostrarAviso(funcion === 'turnos_reservar' ? 'Listo, quedaste anotado' : 'Turno cancelado', `${dosDig(hora)}:00 · ${nombreDia(fecha)}`)
+      await cargarTurnos()
+    }
+
+    function mostrarAvisoError(texto) {
+      const el = document.createElement('div')
+      el.className = 'aviso record'
+      el.setAttribute('role', 'alert')
+      el.innerHTML = `<div><strong>No se pudo</strong><span>${escapar(texto)}</span></div>`
+      document.body.appendChild(el)
+      setTimeout(() => el.remove(), 4500)
+    }
+
     /* ============================================================
        PESTAÑAS
        ============================================================ */
     function cambiarVista(vista) {
       document.body.classList.toggle('viendo-progreso', vista === 'progreso')
       document.body.classList.toggle('viendo-nivel', vista === 'nivel')
+      document.body.classList.toggle('viendo-turnos', vista === 'turnos')
       document.querySelectorAll('.pestanas button').forEach(b => {
         const activa = b.dataset.vista === vista
         b.classList.toggle('activa', activa)
@@ -3476,6 +3799,12 @@
       })
       if (vista === 'progreso') renderizarProgreso()
       if (vista === 'nivel') renderizarNivel()
+      clearInterval(refrescoTurnos)
+      if (vista === 'turnos') {
+        renderizarTurnos()
+        cargarTurnos()
+        refrescoTurnos = setInterval(cargarTurnos, 60000)   // los cupos cambian: se actualiza solo
+      }
       document.querySelector('.acciones').scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
 
