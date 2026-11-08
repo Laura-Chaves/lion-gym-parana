@@ -2430,35 +2430,40 @@
     const fechaCorta = iso => iso ? new Date(iso + 'T00:00:00').toLocaleDateString('es-AR') : ''
 
     /* ============================================================
-       CARGA INICIAL — mismas consultas que la versión actual
+       CARGA INICIAL
+       Usa la función socio_rutina (migración 011): devuelve solo los
+       datos de este socio y sus rutinas con días y ejercicios.
+       Si la 011 todavía no está aplicada, usa las consultas de antes.
        ============================================================ */
+    let detalleRutinas = {} // rutina_id → [{ dia, ejercicios }]
+
     async function iniciar() {
       const socioId = new URLSearchParams(window.location.search).get('socio')
 
-      if (!socioId) {
+      if (!socioId || !/^[0-9a-f-]{36}$/i.test(socioId)) {
         return mostrarNoEncontrado('El link no es válido. Pedile a tu entrenador que te lo vuelva a enviar.')
       }
 
       try {
-        const { data: socios, error } = await db
-          .from('socios')
-          .select('*')
-          .eq('id', socioId)
-          .limit(1)
+        const { data, error } = await db.rpc('socio_rutina', { p_socio: socioId })
 
-        if (error || !socios || socios.length === 0) {
-          return mostrarNoEncontrado('No encontramos tu ficha. Pedile a tu entrenador que te vuelva a enviar el link.')
+        if (error && /socio_rutina|PGRST202|does not exist|not find/i.test((error.code || '') + ' ' + (error.message || ''))) {
+          const ok = await cargarAnterior(socioId)
+          if (!ok) return
+        } else {
+          if (error || !data || !data.socio) {
+            return mostrarNoEncontrado('No encontramos tu ficha. Pedile a tu entrenador que te vuelva a enviar el link.')
+          }
+          socio = data.socio
+          rutinas = (data.rutinas || []).map(r => {
+            const { dias, ...resto } = r
+            detalleRutinas[r.id] = (dias || []).map(d => {
+              const { ejercicios, ...dia } = d
+              return { dia, ejercicios: ejercicios || [] }
+            })
+            return resto
+          })
         }
-
-        socio = socios[0]
-
-        const { data: rutinasData } = await db
-          .from('rutinas')
-          .select('*')
-          .eq('socio_id', socioId)
-          .order('created_at', { ascending: false })
-
-        rutinas = rutinasData || []
 
         if (rutinas.length === 0) return mostrarNoEncontrado()
 
@@ -2475,6 +2480,35 @@
         console.error(err)
         mostrarNoEncontrado('No pudimos cargar tu rutina. Revisá la conexión e intentá de nuevo.')
       }
+    }
+
+    // Forma anterior (lectura directa de tablas). Solo se usa si falta la 011.
+    async function cargarAnterior(socioId) {
+      const { data: socios, error } = await db.from('socios')
+        .select('id, nombre, fecha_nacimiento').eq('id', socioId).limit(1)
+      if (error || !socios || socios.length === 0) {
+        mostrarNoEncontrado('No encontramos tu ficha. Pedile a tu entrenador que te vuelva a enviar el link.')
+        return false
+      }
+      socio = socios[0]
+      const { data: rutinasData } = await db.from('rutinas').select('*')
+        .eq('socio_id', socioId).order('created_at', { ascending: false })
+      rutinas = rutinasData || []
+      return true
+    }
+
+    async function detalleDe(rutinaId) {
+      if (detalleRutinas[rutinaId]) return detalleRutinas[rutinaId]
+      const { data: dias } = await db.from('rutina_dias').select('*')
+        .eq('rutina_id', rutinaId).order('numero_dia', { ascending: true })
+      const lista = []
+      for (const dia of dias || []) {
+        const { data: ejercicios } = await db.from('rutina_ejercicios').select('*')
+          .eq('dia_id', dia.id).order('orden', { ascending: true })
+        lista.push({ dia, ejercicios: ejercicios || [] })
+      }
+      detalleRutinas[rutinaId] = lista
+      return lista
     }
 
     function mostrarNoEncontrado(texto) {
@@ -2512,16 +2546,12 @@
 
       renderizarFicha(rutina)
 
-      const { data: dias } = await db
-        .from('rutina_dias')
-        .select('*')
-        .eq('rutina_id', rutinaId)
-        .order('numero_dia', { ascending: true })
+      const detalle = await detalleDe(rutinaId)
 
       const contenedor = document.getElementById('dias')
       const nav = document.getElementById('diasNav')
 
-      if (!dias || dias.length === 0) {
+      if (detalle.length === 0) {
         contenedor.innerHTML = '<p class="sin-ejercicios">Esta rutina todavía no tiene días cargados.</p>'
         nav.innerHTML = ''
         diasRutina = []
@@ -2530,16 +2560,11 @@
 
       let html = ''
       diasRutina = []
-      for (const dia of dias) {
-        const { data: ejercicios } = await db
-          .from('rutina_ejercicios')
-          .select('*')
-          .eq('dia_id', dia.id)
-          .order('orden', { ascending: true })
-
-        diasRutina.push({ dia, ejercicios: ejercicios || [] })
-        html += renderizarDia(dia, ejercicios || [], diasRutina.length - 1)
+      for (const { dia, ejercicios } of detalle) {
+        diasRutina.push({ dia, ejercicios })
+        html += renderizarDia(dia, ejercicios, diasRutina.length - 1)
       }
+      const dias = detalle.map(x => x.dia)
 
       contenedor.innerHTML = html
       nav.innerHTML = dias.map(d => `<a href="#dia-${d.numero_dia}">Día ${d.numero_dia}</a>`).join('')
