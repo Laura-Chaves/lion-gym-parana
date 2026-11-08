@@ -815,7 +815,7 @@
       <form class="form-dni" id="formDni" autocomplete="off">
         <label for="inputDni">Ingresá tu DNI</label>
         <div class="campo-dni">
-          <input type="text" id="inputDni" inputmode="numeric" maxlength="9"
+          <input type="text" id="inputDni" inputmode="numeric" maxlength="12"
                  placeholder="Sin puntos ni espacios" autofocus>
           <button type="submit" class="btn-ingresar" id="btnIngresar">Ingresar</button>
         </div>
@@ -987,22 +987,33 @@
     }
 
     /* ============================================================
-       REGISTRO DE INGRESO — mismas consultas que el sistema actual
+       REGISTRO DE INGRESO
+       Usa la función recepcion_ingreso (migración 011): con el DNI
+       devuelve solo los datos de ese socio y registra el ingreso.
+       Si la 011 todavía no está aplicada, usa las consultas de antes.
        ============================================================ */
+
+    // Las horas de la base vienen sin zona y están en UTC
+    function fechaUTC(valor) {
+      if (!valor) return null
+      const t = String(valor)
+      return new Date(/[zZ]$|[+-]\d\d:?\d\d$/.test(t) ? t : t + 'Z')
+    }
+
     async function registrarIngreso(dni) {
       if (buscando) return
       estadoBuscando(true)
 
       try {
-        const { data: socios, error } = await db
-          .from('socios')
-          .select('*')
-          .eq('dni', dni)
-          .limit(1)
+        const { data, error } = await db.rpc('recepcion_ingreso', { p_dni: dni })
 
+        // Sin la migración 011: forma anterior
+        if (error && /recepcion_ingreso|PGRST202|does not exist|not find/i.test((error.code || '') + ' ' + (error.message || ''))) {
+          return await registrarIngresoAnterior(dni)
+        }
         if (error) throw error
 
-        if (!socios || socios.length === 0) {
+        if (!data || !data.encontrado) {
           mostrarMensaje(
             'No encontramos ese DNI',
             `Revisá el número (${escapar(dni)}). Si todavía no sos socio, consultá en el mostrador.`
@@ -1010,59 +1021,19 @@
           return
         }
 
-        const socio = socios[0]
+        const socio = data.socio
+        const membresia = data.membresia
         const ahora = new Date()
+        const cuota = membresia
+          ? calcularEstadoCuota({ fechaUltimoPago: data.ultimo_pago, plan: membresia.planes, ahora })
+          : null
+        const ultimoIngresoHoy = fechaUTC(data.ultimo_ingreso_hoy)
 
-        const { data: membresias } = await db
-          .from('membresias')
-          .select('*, planes(*)')
-          .eq('socio_id', socio.id)
-          .eq('estado', 'activa')
-          .limit(1)
+        // Gym Levels: si falla, el ingreso ya quedó registrado y se muestra igual lo demás
+        const gl = await db.rpc('gym_levels_ingreso', { p_socio: socio.id })
+          .then(({ data, error }) => (error || !data || data.excluido) ? null : data, () => null)
 
-        const membresia = membresias && membresias.length > 0 ? membresias[0] : null
-
-        let cuota = null
-        if (membresia) {
-          const { data: ultimosPagos } = await db
-            .from('pagos')
-            .select('fecha_pago')
-            .eq('socio_id', socio.id)
-            .order('fecha_pago', { ascending: false })
-            .limit(1)
-
-          const fechaUltimoPago = ultimosPagos && ultimosPagos.length > 0 ? ultimosPagos[0].fecha_pago : null
-          cuota = calcularEstadoCuota({ fechaUltimoPago, plan: membresia.planes, ahora })
-        }
-
-        // Ingresos anteriores de hoy (para el aviso). El nuevo se registra igual.
-        const hoyInicio = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate()).toISOString()
-        const { data: ingresosHoy } = await db
-          .from('asistencia')
-          .select('fecha_hora')
-          .eq('socio_id', socio.id)
-          .gte('fecha_hora', hoyInicio)
-          .order('fecha_hora', { ascending: false })
-
-        const ultimoIngresoHoy = ingresosHoy && ingresosHoy.length > 0 ? new Date(ingresosHoy[0].fecha_hora) : null
-
-        const { error: errorIngreso } = await db.from('asistencia').insert({ socio_id: socio.id })
-
-        if (errorIngreso) {
-          mostrarMensaje('No pudimos registrar tu ingreso', 'Avisá en el mostrador para que lo registren a mano.')
-          return
-        }
-
-        // Rutina y Gym Levels en paralelo. Si alguna falla, el ingreso
-        // ya quedó registrado y se muestra igual lo demás.
-        const [tieneRutina, gl] = await Promise.all([
-          db.from('rutinas').select('id').eq('socio_id', socio.id).limit(1)
-            .then(({ data }) => !!(data && data.length), () => false),
-          db.rpc('gym_levels_ingreso', { p_socio: socio.id })
-            .then(({ data, error }) => (error || !data || data.excluido) ? null : data, () => null)
-        ])
-
-        mostrarSocio({ socio, membresia, cuota, ahora, ultimoIngresoHoy, tieneRutina, gl })
+        mostrarSocio({ socio, membresia, cuota, ahora, ultimoIngresoHoy, tieneRutina: !!data.tiene_rutina, gl })
 
       } catch (err) {
         console.error(err)
@@ -1071,6 +1042,41 @@
           'No pudimos conectarnos con el sistema. Esperá unos segundos y volvé a intentar, o avisá en el mostrador.'
         )
       }
+    }
+
+    // Forma anterior (lectura directa de tablas). Solo se usa si falta la 011.
+    async function registrarIngresoAnterior(dni) {
+      const { data: socios, error } = await db.from('socios').select('id, nombre').eq('dni', dni).limit(1)
+      if (error) throw error
+      if (!socios || socios.length === 0) {
+        mostrarMensaje('No encontramos ese DNI', `Revisá el número (${escapar(dni)}). Si todavía no sos socio, consultá en el mostrador.`)
+        return
+      }
+      const socio = socios[0]
+      const ahora = new Date()
+      const { data: membresias } = await db.from('membresias').select('*, planes(*)')
+        .eq('socio_id', socio.id).eq('estado', 'activa').limit(1)
+      const membresia = membresias && membresias.length > 0 ? membresias[0] : null
+      let cuota = null
+      if (membresia) {
+        const { data: ultimosPagos } = await db.from('pagos').select('fecha_pago')
+          .eq('socio_id', socio.id).order('fecha_pago', { ascending: false }).limit(1)
+        cuota = calcularEstadoCuota({ fechaUltimoPago: ultimosPagos && ultimosPagos[0] ? ultimosPagos[0].fecha_pago : null, plan: membresia.planes, ahora })
+      }
+      const hoyInicio = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate()).toISOString()
+      const { data: ingresosHoy } = await db.from('asistencia').select('fecha_hora')
+        .eq('socio_id', socio.id).gte('fecha_hora', hoyInicio).order('fecha_hora', { ascending: false })
+      const ultimoIngresoHoy = ingresosHoy && ingresosHoy.length ? fechaUTC(ingresosHoy[0].fecha_hora) : null
+      const { error: errorIngreso } = await db.from('asistencia').insert({ socio_id: socio.id })
+      if (errorIngreso) {
+        mostrarMensaje('No pudimos registrar tu ingreso', 'Avisá en el mostrador para que lo registren a mano.')
+        return
+      }
+      const [tieneRutina, gl] = await Promise.all([
+        db.from('rutinas').select('id').eq('socio_id', socio.id).limit(1).then(({ data }) => !!(data && data.length), () => false),
+        db.rpc('gym_levels_ingreso', { p_socio: socio.id }).then(({ data, error }) => (error || !data || data.excluido) ? null : data, () => null)
+      ])
+      mostrarSocio({ socio, membresia, cuota, ahora, ultimoIngresoHoy, tieneRutina, gl })
     }
 
     /* ============================================================
